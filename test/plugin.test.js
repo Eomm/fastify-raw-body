@@ -44,16 +44,6 @@ t.test('raw body flow check', t => {
     reply.send(req.rawBody)
   })
 
-  app.post('/', {
-    config: {
-      rawBody: true
-    },
-    handler (req, reply) {
-      t.ok(req.rawBody)
-      reply.send(req.rawBody)
-    }
-  })
-
   app.inject({
     method: 'POST',
     url: '/',
