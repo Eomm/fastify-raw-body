@@ -2,7 +2,6 @@
 
 const fp = require('fastify-plugin')
 const getRawBody = require('raw-body')
-// const { PassThrough } = require('stream')
 
 const kRawBodyHook = Symbol('fastify-raw-body:rawBodyHook')
 
@@ -12,9 +11,10 @@ function rawBody (fastify, opts, next) {
     return
   }
 
-  const { encoding, global } = Object.assign({
+  const { encoding, global, runFirst } = Object.assign({
     encoding: 'utf8',
-    global: true
+    global: true,
+    runFirst: false
   }, opts)
 
   fastify.addHook('onRoute', (routeOptions) => {
@@ -24,9 +24,17 @@ function rawBody (fastify, opts, next) {
       if (!routeOptions.preParsing) {
         routeOptions.preParsing = [preparsingRawBody]
       } else if (Array.isArray(routeOptions.preParsing)) {
-        routeOptions.preParsing.push(preparsingRawBody)
+        if (runFirst) {
+          routeOptions.preParsing.unshift(preparsingRawBody)
+        } else {
+          routeOptions.preParsing.push(preparsingRawBody)
+        }
       } else {
-        routeOptions.preParsing = [routeOptions.preParsing, preparsingRawBody]
+        if (runFirst) {
+          routeOptions.preParsing = [preparsingRawBody, routeOptions.preParsing]
+        } else {
+          routeOptions.preParsing = [routeOptions.preParsing, preparsingRawBody]
+        }
       }
     }
   })
@@ -35,19 +43,15 @@ function rawBody (fastify, opts, next) {
   next()
 
   function preparsingRawBody (request, reply, payload, done) {
-    // const requestDataPassthrough = payload.pipe(new PassThrough())
-    getRawBody(payload, {
+    getRawBody(runFirst ? request.raw : payload, {
       length: null, // avoid content lenght check
       limit: fastify.initialConfig.bodyLimit,
-      encoding: encoding
+      encoding
     }, function (_, string) {
       // if (err) { return done(err) } // TODO
       request.rawBody = string
     })
 
-    // if (payload.receivedEncodedLength) {
-    //   requestDataPassthrough.receivedEncodedLength = payload.receivedEncodedLength
-    // }
     done(null, payload)
   }
 }

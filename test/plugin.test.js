@@ -226,6 +226,71 @@ t.test('raw body is the last body stream value', t => {
   })
 })
 
+t.test('raw body is the first body stream value', t => {
+  t.plan(8)
+  const app = Fastify()
+
+  const payload = { hello: 'world' }
+
+  app.addHook('preParsing', function (req, reply, payload, done) {
+    const change = new Readable()
+    change.receivedEncodedLength = parseInt(req.headers['content-length'], 10)
+    change.push('{"hello":"another world"}')
+    change.push(null)
+    done(null, change)
+  })
+
+  app.register(rawBody, { runFirst: true })
+
+  app.post('/', async (req, reply) => {
+    t.deepEquals(req.body, { hello: 'another world' })
+
+    await new Promise(resolve => {
+      // TODO the request.raw is consumed lately
+      setTimeout(resolve, 1000)
+    })
+
+    reply.send(req.rawBody)
+  })
+
+  app.post('/preparsing', {
+    preParsing: function (req, reply, payload, done) {
+      const change = new Readable()
+      change.receivedEncodedLength = parseInt(req.headers['content-length'], 10)
+      change.push('{"hello":"last world"}')
+      change.push(null)
+      done(null, change)
+    }
+  }, async (req, reply) => {
+    t.deepEquals(req.body, { hello: 'last world' })
+    await new Promise(resolve => {
+      // TODO the request.raw is consumed lately
+      setTimeout(resolve, 1000)
+    })
+    reply.send(req.rawBody)
+  })
+
+  app.inject({
+    method: 'POST',
+    url: '/',
+    payload
+  }, (err, res) => {
+    t.error(err)
+    t.equal(res.statusCode, 200)
+    t.equals(res.payload, JSON.stringify(payload))
+
+    app.inject({
+      method: 'POST',
+      url: '/preparsing',
+      payload
+    }, (err, res) => {
+      t.error(err)
+      t.equal(res.statusCode, 200)
+      t.equals(res.payload, JSON.stringify(payload))
+    })
+  })
+})
+
 t.test('raw body route array', t => {
   t.plan(6)
   const app = Fastify()
