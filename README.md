@@ -1,6 +1,6 @@
 # fastify-raw-body
 
-Adds the raw body to the Fastify request object.
+Adds the raw body to the Fastify **v3** request object.
 
 ## Install
 
@@ -19,7 +19,7 @@ const app = Fastify()
 app.register(require('fastify-raw-body'), { 
   global: false, // add the rawBody to every request. Default true
   encoding: 'utf8', // set it to false to set rawBody as a Buffer
-  runFirst: true // get the body before any preParsing change/uncompress it. Default false
+  runFirst: true // get the body before any preParsing hook change/uncompress it. Default false
 })
 
 app.post('/', {

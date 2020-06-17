@@ -51,7 +51,6 @@ function rawBody (fastify, opts, next) {
       // if (err) { return done(err) } // TODO
       request.rawBody = string
     })
-
     done(null, payload)
   }
 }

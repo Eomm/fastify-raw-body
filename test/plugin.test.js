@@ -2,7 +2,7 @@
 
 const t = require('tap')
 const Fastify = require('fastify')
-const { Readable } = require('stream')
+const { Transform, Readable } = require('stream')
 const rawBody = require('../plugin')
 
 t.test('raw body flow check', t => {
@@ -233,40 +233,36 @@ t.test('raw body is the first body stream value', t => {
   const payload = { hello: 'world' }
 
   app.addHook('preParsing', function (req, reply, payload, done) {
-    const change = new Readable()
-    change.receivedEncodedLength = parseInt(req.headers['content-length'], 10)
-    change.push('{"hello":"another world"}')
-    change.push(null)
-    done(null, change)
+    const transformation = new Transform({
+      writableObjectMode: true,
+      transform  (chunk, encoding, done) {
+        this.push(chunk.toString(encoding).toUpperCase())
+        done()
+      }
+    })
+    done(null, payload.pipe(transformation))
   })
 
   app.register(rawBody, { runFirst: true })
 
-  app.post('/', async (req, reply) => {
-    t.deepEquals(req.body, { hello: 'another world' })
-
-    await new Promise(resolve => {
-      // TODO the request.raw is consumed lately
-      setTimeout(resolve, 1000)
-    })
-
+  app.post('/', (req, reply) => {
+    t.deepEquals(req.body, { HELLO: 'WORLD' })
     reply.send(req.rawBody)
   })
 
   app.post('/preparsing', {
     preParsing: function (req, reply, payload, done) {
-      const change = new Readable()
-      change.receivedEncodedLength = parseInt(req.headers['content-length'], 10)
-      change.push('{"hello":"last world"}')
-      change.push(null)
-      done(null, change)
+      const transformation = new Transform({
+        writableObjectMode: true,
+        transform  (chunk, encoding, done) {
+          this.push(chunk.toString(encoding).toUpperCase())
+          done()
+        }
+      })
+      done(null, payload.pipe(transformation))
     }
-  }, async (req, reply) => {
-    t.deepEquals(req.body, { hello: 'last world' })
-    await new Promise(resolve => {
-      // TODO the request.raw is consumed lately
-      setTimeout(resolve, 1000)
-    })
+  }, (req, reply) => {
+    t.deepEquals(req.body, { HELLO: 'WORLD' })
     reply.send(req.rawBody)
   })
 
@@ -322,5 +318,32 @@ t.test('raw body route array', t => {
     t.error(err)
     t.equal(res.statusCode, 200)
     t.equals(res.payload, JSON.stringify({ hello: 'last world' }))
+  })
+})
+
+t.test('raw body buffer', { skip: 'not working' }, t => {
+  t.plan(5)
+  const app = Fastify()
+
+  const payload = { hello: 'world' }
+
+  app.register(rawBody, { encoding: 'buffer' })
+
+  app.post('/', (req, reply) => {
+    t.deepEquals(req.body, { hello: 'world' })
+    console.log({ x: req.rawBody })
+
+    // t.type(req.rawBody, Buffer)
+    reply.send(req.rawBody)
+  })
+
+  app.inject({
+    method: 'POST',
+    url: '/',
+    payload
+  }, (err, res) => {
+    t.error(err)
+    t.equal(res.statusCode, 200)
+    t.equals(res.payload, JSON.stringify(payload))
   })
 })
