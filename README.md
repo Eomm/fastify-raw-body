@@ -1,5 +1,8 @@
 # fastify-raw-body
 
+![ci](https://github.com/Eomm/fastify-raw-body/workflows/ci/badge.svg)
+[![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat)](http://standardjs.com/)
+
 Adds the raw body to the Fastify **v3** request object.
 
 ## Install
