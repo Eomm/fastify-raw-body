@@ -32,6 +32,7 @@
   },
   "dependencies": {
     "fastify-plugin": "^2.0.0",
-    "raw-body": "^2.4.1"
+    "raw-body": "^2.4.1",
+    "secure-json-parse": "^2.1.0"
   }
 }

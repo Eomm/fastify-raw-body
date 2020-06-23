@@ -17,9 +17,9 @@ const Fastify = require('fastify')
 const app = Fastify()
 
 app.register(require('fastify-raw-body'), { 
-  global: false, // add the rawBody to every request. Default true
-  encoding: 'utf8', // set it to false to set rawBody as a Buffer
-  runFirst: true // get the body before any preParsing hook change/uncompress it. Default false
+  global: false, // add the rawBody to every request. **Default true**
+  encoding: 'utf8', // set it to false to set rawBody as a Buffer **Default utf8**
+  runFirst: true // get the body before any preParsing hook change/uncompress it. **Default false**
 })
 
 app.post('/', {

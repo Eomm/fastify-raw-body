@@ -321,19 +321,19 @@ t.test('raw body route array', t => {
   })
 })
 
-t.test('raw body buffer', { skip: 'not working' }, t => {
+t.test('raw body buffer', t => {
   t.plan(5)
   const app = Fastify()
 
   const payload = { hello: 'world' }
 
-  app.register(rawBody, { encoding: 'buffer' })
+  app.register(rawBody, { encoding: false })
 
   app.post('/', (req, reply) => {
     t.deepEquals(req.body, { hello: 'world' })
     console.log({ x: req.rawBody })
 
-    // t.type(req.rawBody, Buffer)
+    t.type(req.rawBody, Buffer)
     reply.send(req.rawBody)
   })
 
@@ -345,5 +345,27 @@ t.test('raw body buffer', { skip: 'not working' }, t => {
     t.error(err)
     t.equal(res.statusCode, 200)
     t.equals(res.payload, JSON.stringify(payload))
+  })
+})
+
+t.test('body limit', t => {
+  t.plan(2)
+  const app = Fastify({ bodyLimit: 5 })
+
+  const payload = { hello: 'world' }
+
+  app.register(rawBody, { encoding: false })
+
+  app.post('/', (req, reply) => {
+    t.fail('body is too large')
+  })
+
+  app.inject({
+    method: 'POST',
+    url: '/',
+    payload
+  }, (err, res) => {
+    t.error(err)
+    t.equal(res.statusCode, 413)
   })
 })
