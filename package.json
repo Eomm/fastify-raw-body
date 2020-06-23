@@ -1,0 +1,38 @@
+{
+  "name": "fastify-raw-body",
+  "version": "1.0.0",
+  "description": "Request raw body",
+  "main": "plugin.js",
+  "scripts": {
+    "test": "tap test/**.test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Eomm/fastify-raw-body.git"
+  },
+  "keywords": [
+    "raw-body",
+    "body",
+    "request",
+    "fastify-raw-body"
+  ],
+  "author": "Manuel Spigolon <behemoth89@gmail.com> (https://github.com/Eomm)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Eomm/fastify-raw-body/issues"
+  },
+  "engines": {
+    "node": ">= 10"
+  },
+  "homepage": "https://github.com/Eomm/fastify-raw-body#readme",
+  "devDependencies": {
+    "fastify": "^3.0.0-rc.4",
+    "standard": "^14.3.4",
+    "tap": "^14.10.7"
+  },
+  "dependencies": {
+    "fastify-plugin": "^2.0.0",
+    "raw-body": "^2.4.1",
+    "secure-json-parse": "^2.1.0"
+  }
+}
