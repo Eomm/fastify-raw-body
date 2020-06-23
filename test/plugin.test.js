@@ -321,6 +321,42 @@ t.test('raw body route array', t => {
   })
 })
 
+t.test('preparsing run first', t => {
+  t.plan(5)
+  const app = Fastify()
+
+  const payload = { hello: 'world' }
+
+  app.register(rawBody, { runFirst: true })
+
+  app.post('/preparsing', {
+    preParsing: [function (req, reply, payload, done) {
+      const transformation = new Transform({
+        writableObjectMode: true,
+        transform  (chunk, encoding, done) {
+          this.push(chunk.toString(encoding).toUpperCase())
+          done()
+        }
+      })
+      done(null, payload.pipe(transformation))
+    }]
+  }, (req, reply) => {
+    t.deepEquals(req.body, { HELLO: 'WORLD' })
+    t.equals(req.rawBody, JSON.stringify(payload))
+    reply.send(req.rawBody)
+  })
+
+  app.inject({
+    method: 'POST',
+    url: '/preparsing',
+    payload
+  }, (err, res) => {
+    t.error(err)
+    t.equal(res.statusCode, 200)
+    t.equals(res.payload, JSON.stringify(payload))
+  })
+})
+
 t.test('raw body buffer', t => {
   t.plan(5)
   const app = Fastify()
@@ -331,8 +367,6 @@ t.test('raw body buffer', t => {
 
   app.post('/', (req, reply) => {
     t.deepEquals(req.body, { hello: 'world' })
-    console.log({ x: req.rawBody })
-
     t.type(req.rawBody, Buffer)
     reply.send(req.rawBody)
   })
@@ -367,5 +401,47 @@ t.test('body limit', t => {
   }, (err, res) => {
     t.error(err)
     t.equal(res.statusCode, 413)
+  })
+})
+
+t.test('empty body', t => {
+  t.plan(2)
+  const app = Fastify()
+
+  app.register(rawBody, { encoding: false })
+
+  app.post('/', (req, reply) => {
+    t.fail('body is too small')
+  })
+
+  app.inject({
+    method: 'POST',
+    url: '/',
+    headers: { 'content-type': 'application/json' },
+    payload: ''
+  }, (err, res) => {
+    t.error(err)
+    t.equal(res.statusCode, 400)
+  })
+})
+
+t.test('bad json body', t => {
+  t.plan(2)
+  const app = Fastify()
+
+  app.register(rawBody, { encoding: false })
+
+  app.post('/', (req, reply) => {
+    t.fail('body is not a json')
+  })
+
+  app.inject({
+    method: 'POST',
+    url: '/',
+    headers: { 'content-type': 'application/json' },
+    payload: '{"ops":'
+  }, (err, res) => {
+    t.error(err)
+    t.equal(res.statusCode, 400)
   })
 })
