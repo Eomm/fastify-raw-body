@@ -357,6 +357,31 @@ t.test('preparsing run first', t => {
   })
 })
 
+t.test('raw body change default name', t => {
+  t.plan(5)
+  const app = Fastify()
+
+  const payload = { hello: 'world' }
+
+  app.register(rawBody, { field: 'rawRawRaw', encoding: false })
+
+  app.post('/', (req, reply) => {
+    t.deepEquals(req.body, { hello: 'world' })
+    t.type(req.rawRawRaw, Buffer)
+    reply.send(req.rawRawRaw)
+  })
+
+  app.inject({
+    method: 'POST',
+    url: '/',
+    payload
+  }, (err, res) => {
+    t.error(err)
+    t.equal(res.statusCode, 200)
+    t.equals(res.payload, JSON.stringify(payload))
+  })
+})
+
 t.test('raw body buffer', t => {
   t.plan(5)
   const app = Fastify()

@@ -12,7 +12,8 @@ function rawBody (fastify, opts, next) {
     return
   }
 
-  const { encoding, global, runFirst } = Object.assign({
+  const { field, encoding, global, runFirst } = Object.assign({
+    field: 'rawBody',
     encoding: 'utf8',
     global: true,
     runFirst: false
@@ -64,7 +65,7 @@ function rawBody (fastify, opts, next) {
         return
       }
 
-      request.rawBody = string
+      request[field] = string
     })
 
     done(null, payload)
