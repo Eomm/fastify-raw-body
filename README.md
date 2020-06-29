@@ -14,7 +14,7 @@ npm i fastify-raw-body
 ## Usage
 
 This plugin will add the `request.rawBody`.  
-It will get the data thanks to the [`preParsing`](https://github.com/fastify/fastify/blob/master/docs/Hooks.md#preparsing) hook.
+It will get the data using the [`preParsing`](https://github.com/fastify/fastify/blob/master/docs/Hooks.md#preparsing) hook.
 
 ```js
 const Fastify = require('fastify')
@@ -46,10 +46,11 @@ So use it only for the routes that you need to.
 
 ### Raw body as Buffer
 
-It is important to know that setting `encoding: false` will add a [`addContentTypeParser`](https://www.fastify.io/docs/master/ContentTypeParser/) for `application/json`.
-This is needed since the default content type parser will set the encoding of the request stream as `{ parseAs: 'string' }`.
+It is important to know that setting `encoding: false` will run [`addContentTypeParser`](https://www.fastify.io/docs/master/ContentTypeParser/) to add a content type parser for `application/json`.
 
-If you don't have customized this component, it will be secure as the original one since [`secure-json-parse`](https://www.npmjs.com/package/secure-json-parse) is used under the hood.
+This is needed since the default content type parser will set the encoding of the request stream to `{ parseAs: 'string' }`.
+
+If you haven't customized this component, it will be secure as the original one since [`secure-json-parse`](https://www.npmjs.com/package/secure-json-parse) is used under the hood.
 
 ## License
 
