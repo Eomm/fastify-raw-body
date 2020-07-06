@@ -50,8 +50,8 @@ function rawBody (fastify, opts, next) {
   fastify[kRawBodyHook] = true
   next()
 
-  function preparsingRawBody (request, reply, payload, done) {
-    getRawBody(runFirst ? request.raw : payload, {
+  function preparsingRawBody (request, reply, done) {
+    getRawBody(request.raw, {
       length: null, // avoid content lenght check: fastify will do it
       limit: fastify.initialConfig.bodyLimit, // limit to avoid memory leak or DoS
       encoding
@@ -68,7 +68,7 @@ function rawBody (fastify, opts, next) {
       request[field] = string
     })
 
-    done(null, payload)
+    done()
   }
 
   function almostDefaultJsonParser (req, body, done) {
@@ -92,6 +92,6 @@ function rawBody (fastify, opts, next) {
 }
 
 module.exports = fp(rawBody, {
-  fastify: '^3.0.0',
+  fastify: '^2.0.0',
   name: 'fastify-raw-body'
 })
