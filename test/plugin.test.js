@@ -2,7 +2,6 @@
 
 const t = require('tap')
 const Fastify = require('fastify')
-const { Transform, Readable } = require('stream')
 const rawBody = require('../plugin')
 
 t.test('raw body flow check', t => {
@@ -20,8 +19,6 @@ t.test('raw body flow check', t => {
   })
 
   app.addHook('preParsing', function (request, reply, done) {
-    // console.log({ arg: arguments })
-
     t.notOk(request.rawBody)
     done(null, payload)
   })
@@ -216,6 +213,112 @@ t.test('raw body is the last body stream value', t => {
       t.error(err)
       t.equal(res.statusCode, 200)
       t.equals(res.payload, JSON.stringify({ hello: 'world' }))
+    })
+  })
+})
+
+t.test('raw body run before content type parser', t => {
+  t.plan(8)
+  const app = Fastify()
+
+  const payload = { hello: 'world' }
+
+  app.addContentTypeParser('application/json', { parseAs: 'string' }, function (req, body, done) {
+    const json = JSON.parse(body.toUpperCase())
+    done(null, json)
+  })
+
+  app.addHook('preParsing', function (req, reply, done) {
+    // cannot change payload
+    done(null)
+  })
+
+  app.register(rawBody, { runFirst: true })
+
+  app.post('/', (req, reply) => {
+    t.deepEquals(req.body, { HELLO: 'WORLD' })
+    reply.send(req.rawBody)
+  })
+
+  app.post('/preparsing', {
+    preParsing: function (req, reply, done) {
+      done()
+    }
+  }, (req, reply) => {
+    t.deepEquals(req.body, { HELLO: 'WORLD' })
+    reply.send(req.rawBody)
+  })
+
+  app.inject({
+    method: 'POST',
+    url: '/',
+    payload
+  }, (err, res) => {
+    t.error(err)
+    t.equal(res.statusCode, 200)
+    t.equals(res.payload, JSON.stringify(payload))
+
+    app.inject({
+      method: 'POST',
+      url: '/preparsing',
+      payload
+    }, (err, res) => {
+      t.error(err)
+      t.equal(res.statusCode, 200)
+      t.equals(res.payload, JSON.stringify(payload))
+    })
+  })
+})
+
+t.test('raw body run before content type parser even with buffer', t => {
+  t.plan(8)
+  const app = Fastify()
+
+  const payload = { hello: 'world' }
+
+  app.addContentTypeParser('application/json', { parseAs: 'buffer' }, function (req, body, done) {
+    const json = JSON.parse(body.toString('utf8').toUpperCase())
+    done(null, json)
+  })
+
+  app.addHook('preParsing', function (req, reply, done) {
+    // cannot change payload
+    done(null)
+  })
+
+  app.register(rawBody, { runFirst: true })
+
+  app.post('/', (req, reply) => {
+    t.deepEquals(req.body, { HELLO: 'WORLD' })
+    reply.send(req.rawBody)
+  })
+
+  app.post('/preparsing', {
+    preParsing: function (req, reply, done) {
+      done()
+    }
+  }, (req, reply) => {
+    t.deepEquals(req.body, { HELLO: 'WORLD' })
+    reply.send(req.rawBody)
+  })
+
+  app.inject({
+    method: 'POST',
+    url: '/',
+    payload
+  }, (err, res) => {
+    t.error(err)
+    t.equal(res.statusCode, 200)
+    t.equals(res.payload, JSON.stringify(payload))
+
+    app.inject({
+      method: 'POST',
+      url: '/preparsing',
+      payload
+    }, (err, res) => {
+      t.error(err)
+      t.equal(res.statusCode, 200)
+      t.equals(res.payload, JSON.stringify(payload))
     })
   })
 })

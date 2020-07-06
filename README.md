@@ -3,7 +3,7 @@
 ![ci](https://github.com/Eomm/fastify-raw-body/workflows/ci/badge.svg)
 [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat)](http://standardjs.com/)
 
-Adds the raw body to the Fastify **v3** request object.
+Adds the raw body to the Fastify **v2** request object.
 
 ## Install
 
@@ -23,8 +23,7 @@ const app = Fastify()
 app.register(require('fastify-raw-body'), {
   field: 'rawBody', // change the default request.rawBody property name
   global: false, // add the rawBody to every request. **Default true**
-  encoding: 'utf8', // set it to false to set rawBody as a Buffer **Default utf8**
-  runFirst: true // get the body before any preParsing hook change/uncompress it. **Default false**
+  encoding: 'utf8' // set it to false to set rawBody as a Buffer **Default utf8**
 })
 
 app.post('/', {

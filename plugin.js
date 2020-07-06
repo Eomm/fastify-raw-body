@@ -12,11 +12,10 @@ function rawBody (fastify, opts, next) {
     return
   }
 
-  const { field, encoding, global, runFirst } = Object.assign({
+  const { field, encoding, global } = Object.assign({
     field: 'rawBody',
     encoding: 'utf8',
-    global: true,
-    runFirst: false
+    global: true
   }, opts)
 
   if (encoding === false) {
@@ -32,17 +31,9 @@ function rawBody (fastify, opts, next) {
       if (!routeOptions.preParsing) {
         routeOptions.preParsing = [preparsingRawBody]
       } else if (Array.isArray(routeOptions.preParsing)) {
-        if (runFirst) {
-          routeOptions.preParsing.unshift(preparsingRawBody)
-        } else {
-          routeOptions.preParsing.push(preparsingRawBody)
-        }
+        routeOptions.preParsing.push(preparsingRawBody)
       } else {
-        if (runFirst) {
-          routeOptions.preParsing = [preparsingRawBody, routeOptions.preParsing]
-        } else {
-          routeOptions.preParsing = [routeOptions.preParsing, preparsingRawBody]
-        }
+        routeOptions.preParsing = [routeOptions.preParsing, preparsingRawBody]
       }
     }
   })
