@@ -1,6 +1,6 @@
 {
   "name": "fastify-raw-body",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Request raw body",
   "main": "plugin.js",
   "scripts": {
@@ -22,16 +22,16 @@
     "url": "https://github.com/Eomm/fastify-raw-body/issues"
   },
   "engines": {
-    "node": ">= 10"
+    "node": ">= 6"
   },
   "homepage": "https://github.com/Eomm/fastify-raw-body#readme",
   "devDependencies": {
-    "fastify": "^3.0.0-rc.4",
+    "fastify": "^2.15.1",
     "standard": "^14.3.4",
-    "tap": "^14.10.7"
+    "tap": "^12.6.1"
   },
   "dependencies": {
-    "fastify-plugin": "^2.0.0",
+    "fastify-plugin": "^1.0.0",
     "raw-body": "^2.4.1",
     "secure-json-parse": "^2.1.0"
   }

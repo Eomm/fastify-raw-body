@@ -2,7 +2,6 @@
 
 const t = require('tap')
 const Fastify = require('fastify')
-const { Transform, Readable } = require('stream')
 const rawBody = require('../plugin')
 
 t.test('raw body flow check', t => {
@@ -19,7 +18,7 @@ t.test('raw body flow check', t => {
     done()
   })
 
-  app.addHook('preParsing', (request, reply, payload, done) => {
+  app.addHook('preParsing', function (request, reply, done) {
     t.notOk(request.rawBody)
     done(null, payload)
   })
@@ -171,35 +170,27 @@ t.test('raw body is the last body stream value', t => {
   const payload = { hello: 'world' }
 
   let order = 0
-  app.addHook('preParsing', function (req, reply, payload, done) {
+  app.addHook('preParsing', function (req, reply, done) {
     t.equals(order++, 0)
-    const change = new Readable()
-    change.receivedEncodedLength = parseInt(req.headers['content-length'], 10)
-    change.push('{"hello":"another world"}')
-    change.push(null)
-    done(null, change)
+    done()
   })
 
   app.register(rawBody)
 
   app.post('/', (req, reply) => {
-    t.deepEquals(req.body, { hello: 'another world' })
+    t.deepEquals(req.body, { hello: 'world' })
     t.equals(JSON.stringify(req.body), req.rawBody)
     reply.send(req.rawBody)
   })
 
   app.post('/preparsing', {
-    preParsing: function (req, reply, payload, done) {
+    preParsing: function (req, reply, done) {
       t.equals(order++, 1)
       t.notOk(req.rawBody)
-      const change = new Readable()
-      change.receivedEncodedLength = parseInt(req.headers['content-length'], 10)
-      change.push('{"hello":"last world"}')
-      change.push(null)
-      done(null, change)
+      done()
     }
   }, (req, reply) => {
-    t.deepEquals(req.body, { hello: 'last world' })
+    t.deepEquals(req.body, { hello: 'world' })
     t.equals(JSON.stringify(req.body), req.rawBody)
     reply.send(req.rawBody)
   })
@@ -211,7 +202,7 @@ t.test('raw body is the last body stream value', t => {
   }, (err, res) => {
     t.error(err)
     t.equal(res.statusCode, 200)
-    t.equals(res.payload, JSON.stringify({ hello: 'another world' }))
+    t.equals(res.payload, JSON.stringify({ hello: 'world' }))
 
     order = 0 // reset the global order
     app.inject({
@@ -221,26 +212,25 @@ t.test('raw body is the last body stream value', t => {
     }, (err, res) => {
       t.error(err)
       t.equal(res.statusCode, 200)
-      t.equals(res.payload, JSON.stringify({ hello: 'last world' }))
+      t.equals(res.payload, JSON.stringify({ hello: 'world' }))
     })
   })
 })
 
-t.test('raw body is the first body stream value', t => {
+t.test('raw body run before content type parser', t => {
   t.plan(8)
   const app = Fastify()
 
   const payload = { hello: 'world' }
 
-  app.addHook('preParsing', function (req, reply, payload, done) {
-    const transformation = new Transform({
-      writableObjectMode: true,
-      transform  (chunk, encoding, done) {
-        this.push(chunk.toString(encoding).toUpperCase())
-        done()
-      }
-    })
-    done(null, payload.pipe(transformation))
+  app.addContentTypeParser('application/json', { parseAs: 'string' }, function (req, body, done) {
+    const json = JSON.parse(body.toUpperCase())
+    done(null, json)
+  })
+
+  app.addHook('preParsing', function (req, reply, done) {
+    // cannot change payload
+    done(null)
   })
 
   app.register(rawBody, { runFirst: true })
@@ -251,15 +241,8 @@ t.test('raw body is the first body stream value', t => {
   })
 
   app.post('/preparsing', {
-    preParsing: function (req, reply, payload, done) {
-      const transformation = new Transform({
-        writableObjectMode: true,
-        transform  (chunk, encoding, done) {
-          this.push(chunk.toString(encoding).toUpperCase())
-          done()
-        }
-      })
-      done(null, payload.pipe(transformation))
+    preParsing: function (req, reply, done) {
+      done()
     }
   }, (req, reply) => {
     t.deepEquals(req.body, { HELLO: 'WORLD' })
@@ -287,7 +270,60 @@ t.test('raw body is the first body stream value', t => {
   })
 })
 
-t.test('raw body route array', t => {
+t.test('raw body run before content type parser even with buffer', t => {
+  t.plan(8)
+  const app = Fastify()
+
+  const payload = { hello: 'world' }
+
+  app.addContentTypeParser('application/json', { parseAs: 'buffer' }, function (req, body, done) {
+    const json = JSON.parse(body.toString('utf8').toUpperCase())
+    done(null, json)
+  })
+
+  app.addHook('preParsing', function (req, reply, done) {
+    // cannot change payload
+    done(null)
+  })
+
+  app.register(rawBody, { runFirst: true })
+
+  app.post('/', (req, reply) => {
+    t.deepEquals(req.body, { HELLO: 'WORLD' })
+    reply.send(req.rawBody)
+  })
+
+  app.post('/preparsing', {
+    preParsing: function (req, reply, done) {
+      done()
+    }
+  }, (req, reply) => {
+    t.deepEquals(req.body, { HELLO: 'WORLD' })
+    reply.send(req.rawBody)
+  })
+
+  app.inject({
+    method: 'POST',
+    url: '/',
+    payload
+  }, (err, res) => {
+    t.error(err)
+    t.equal(res.statusCode, 200)
+    t.equals(res.payload, JSON.stringify(payload))
+
+    app.inject({
+      method: 'POST',
+      url: '/preparsing',
+      payload
+    }, (err, res) => {
+      t.error(err)
+      t.equal(res.statusCode, 200)
+      t.equals(res.payload, JSON.stringify(payload))
+    })
+  })
+})
+
+t.test('raw body route array - preparsing cannot change payload', t => {
   t.plan(6)
   const app = Fastify()
 
@@ -296,16 +332,12 @@ t.test('raw body route array', t => {
   app.register(rawBody)
 
   app.post('/preparsing', {
-    preParsing: [function (req, reply, payload, done) {
+    preParsing: [function (req, reply, done) {
       t.notOk(req.rawBody)
-      const change = new Readable()
-      change.receivedEncodedLength = parseInt(req.headers['content-length'], 10)
-      change.push('{"hello":"last world"}')
-      change.push(null)
-      done(null, change)
+      done()
     }]
   }, (req, reply) => {
-    t.deepEquals(req.body, { hello: 'last world' })
+    t.deepEquals(req.body, { hello: 'world' })
     t.equals(JSON.stringify(req.body), req.rawBody)
     reply.send(req.rawBody)
   })
@@ -317,43 +349,7 @@ t.test('raw body route array', t => {
   }, (err, res) => {
     t.error(err)
     t.equal(res.statusCode, 200)
-    t.equals(res.payload, JSON.stringify({ hello: 'last world' }))
-  })
-})
-
-t.test('preparsing run first', t => {
-  t.plan(5)
-  const app = Fastify()
-
-  const payload = { hello: 'world' }
-
-  app.register(rawBody, { runFirst: true })
-
-  app.post('/preparsing', {
-    preParsing: [function (req, reply, payload, done) {
-      const transformation = new Transform({
-        writableObjectMode: true,
-        transform  (chunk, encoding, done) {
-          this.push(chunk.toString(encoding).toUpperCase())
-          done()
-        }
-      })
-      done(null, payload.pipe(transformation))
-    }]
-  }, (req, reply) => {
-    t.deepEquals(req.body, { HELLO: 'WORLD' })
-    t.equals(req.rawBody, JSON.stringify(payload))
-    reply.send(req.rawBody)
-  })
-
-  app.inject({
-    method: 'POST',
-    url: '/preparsing',
-    payload
-  }, (err, res) => {
-    t.error(err)
-    t.equal(res.statusCode, 200)
-    t.equals(res.payload, JSON.stringify(payload))
+    t.equals(res.payload, JSON.stringify({ hello: 'world' }))
   })
 })
 

@@ -12,11 +12,10 @@ function rawBody (fastify, opts, next) {
     return
   }
 
-  const { field, encoding, global, runFirst } = Object.assign({
+  const { field, encoding, global } = Object.assign({
     field: 'rawBody',
     encoding: 'utf8',
-    global: true,
-    runFirst: false
+    global: true
   }, opts)
 
   if (encoding === false) {
@@ -32,17 +31,9 @@ function rawBody (fastify, opts, next) {
       if (!routeOptions.preParsing) {
         routeOptions.preParsing = [preparsingRawBody]
       } else if (Array.isArray(routeOptions.preParsing)) {
-        if (runFirst) {
-          routeOptions.preParsing.unshift(preparsingRawBody)
-        } else {
-          routeOptions.preParsing.push(preparsingRawBody)
-        }
+        routeOptions.preParsing.push(preparsingRawBody)
       } else {
-        if (runFirst) {
-          routeOptions.preParsing = [preparsingRawBody, routeOptions.preParsing]
-        } else {
-          routeOptions.preParsing = [routeOptions.preParsing, preparsingRawBody]
-        }
+        routeOptions.preParsing = [routeOptions.preParsing, preparsingRawBody]
       }
     }
   })
@@ -50,8 +41,8 @@ function rawBody (fastify, opts, next) {
   fastify[kRawBodyHook] = true
   next()
 
-  function preparsingRawBody (request, reply, payload, done) {
-    getRawBody(runFirst ? request.raw : payload, {
+  function preparsingRawBody (request, reply, done) {
+    getRawBody(request.raw, {
       length: null, // avoid content lenght check: fastify will do it
       limit: fastify.initialConfig.bodyLimit, // limit to avoid memory leak or DoS
       encoding
@@ -68,7 +59,7 @@ function rawBody (fastify, opts, next) {
       request[field] = string
     })
 
-    done(null, payload)
+    done()
   }
 
   function almostDefaultJsonParser (req, body, done) {
@@ -92,6 +83,6 @@ function rawBody (fastify, opts, next) {
 }
 
 module.exports = fp(rawBody, {
-  fastify: '^3.0.0',
+  fastify: '^2.0.0',
   name: 'fastify-raw-body'
 })
