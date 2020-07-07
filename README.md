@@ -3,12 +3,22 @@
 ![ci](https://github.com/Eomm/fastify-raw-body/workflows/ci/badge.svg)
 [![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat)](http://standardjs.com/)
 
-Adds the raw body to the Fastify **v3** request object.
+Adds the raw body to the Fastify request object.
 
 ## Install
 
+### Fastify v3
+
 ```
 npm i fastify-raw-body
+```
+
+### Fastify v2
+
+The version `2.x` of this module support Fastify v2 and Node.js>=6
+
+```
+npm i fastify-raw-body@2.0.0
 ```
 
 ## Usage
