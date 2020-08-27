@@ -26,11 +26,24 @@ npm i fastify-raw-body@2.0.0
 This plugin will add the `request.rawBody`.  
 It will get the data using the [`preParsing`](https://github.com/fastify/fastify/blob/master/docs/Hooks.md#preparsing) hook.
 
+### As a CommonJS module
+
 ```js
 const Fastify = require('fastify')
-const app = Fastify()
+const fastifyRawBody = require('fastify-raw-body')
+```
 
-app.register(require('fastify-raw-body'), {
+### As a TypeScript / ES6 module
+
+```js
+import { FastifyInstance as Fastify } from "fastify";
+import { default as fastifyRawBody } from "fastify-raw-body";
+```
+
+### Loading the plugin
+
+```js
+app.register(fastifyRawBody, {
   field: 'rawBody', // change the default request.rawBody property name
   global: false, // add the rawBody to every request. **Default true**
   encoding: 'utf8', // set it to false to set rawBody as a Buffer **Default utf8**
