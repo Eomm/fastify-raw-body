@@ -1,0 +1,16 @@
+name: hacktoberfestify
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  hacktoberfestify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: Eomm/hacktoberfestify@action-v1
+        with:
+          issue: ${{ github.event.issue.number }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.github_token }}
