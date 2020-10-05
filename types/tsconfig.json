@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "lib": [ "es2015" ],
+    "module": "commonjs",
+    "esModuleInterop": true,
+    "noEmit": true,
+    "strict": true
+  },
+  "include": [
+     "/types/*.d.ts"
+  ]
+}
