@@ -11,7 +11,7 @@ declare namespace FastifyRawBody {
 
 declare module 'fastify' {
   interface FastifyRequest {
-    rawBody: string | Buffer
+    rawBody?: string | Buffer
   }
 }
 
