@@ -3,6 +3,7 @@
   "version": "3.0.0",
   "description": "Request raw body",
   "main": "plugin.js",
+  "types": "plugin.d.ts",
   "scripts": {
     "test": "standard && tap test/**.test.js"
   },
