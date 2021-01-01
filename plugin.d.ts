@@ -2,10 +2,10 @@ import { FastifyPluginCallback } from 'fastify'
 
 declare namespace FastifyRawBody {
   interface Options {
-    field: string
-    global: boolean
-    encoding: string | null | false
-    runFirst: boolean
+    field?: string
+    global?: boolean
+    encoding?: string | null | false
+    runFirst?: boolean
   }
 }
 
