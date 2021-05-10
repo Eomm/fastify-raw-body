@@ -30,7 +30,7 @@
     "@types/node": "^14.14.17",
     "fastify": "^3.0.0-rc.4",
     "standard": "^14.3.4",
-    "tap": "^14.10.7",
+    "tap": "^15.0.1",
     "tsd": "^0.14.0"
   },
   "dependencies": {

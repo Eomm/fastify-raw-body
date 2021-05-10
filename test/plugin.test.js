@@ -51,7 +51,7 @@ t.test('raw body flow check', t => {
   }, (err, res) => {
     t.error(err)
     t.equal(res.statusCode, 200)
-    t.equals(res.payload, shouldBe)
+    t.equal(res.payload, shouldBe)
   })
 })
 
@@ -64,7 +64,7 @@ t.test('no register raw body twice', t => {
 
   app.ready(err => {
     t.ok(err)
-    t.like(err.message, /twice/)
+    t.match(err.message, /twice/)
   })
 })
 
@@ -110,7 +110,7 @@ t.test('raw body not in GET', t => {
   }, (err, res) => {
     t.error(err)
     t.equal(res.statusCode, 200)
-    t.equals(res.payload, 'raw=undefined')
+    t.equal(res.payload, 'raw=undefined')
   })
 
   app.inject({
@@ -120,7 +120,7 @@ t.test('raw body not in GET', t => {
   }, (err, res) => {
     t.error(err)
     t.equal(res.statusCode, 200)
-    t.equals(res.payload, shouldBe)
+    t.equal(res.payload, shouldBe)
   })
 })
 
@@ -150,7 +150,7 @@ t.test('global skip', t => {
   }, (err, res) => {
     t.error(err)
     t.equal(res.statusCode, 200)
-    t.equals(res.payload, 'raw=undefined')
+    t.equal(res.payload, 'raw=undefined')
   })
 
   app.inject({
@@ -160,7 +160,7 @@ t.test('global skip', t => {
   }, (err, res) => {
     t.error(err)
     t.equal(res.statusCode, 200)
-    t.equals(res.payload, shouldBe)
+    t.equal(res.payload, shouldBe)
   })
 })
 
@@ -172,7 +172,7 @@ t.test('raw body is the last body stream value', t => {
 
   let order = 0
   app.addHook('preParsing', function (req, reply, payload, done) {
-    t.equals(order++, 0)
+    t.equal(order++, 0)
     const change = new Readable()
     change.receivedEncodedLength = parseInt(req.headers['content-length'], 10)
     change.push('{"hello":"another world"}')
@@ -183,14 +183,14 @@ t.test('raw body is the last body stream value', t => {
   app.register(rawBody)
 
   app.post('/', (req, reply) => {
-    t.deepEquals(req.body, { hello: 'another world' })
-    t.equals(JSON.stringify(req.body), req.rawBody)
+    t.same(req.body, { hello: 'another world' })
+    t.equal(JSON.stringify(req.body), req.rawBody)
     reply.send(req.rawBody)
   })
 
   app.post('/preparsing', {
     preParsing: function (req, reply, payload, done) {
-      t.equals(order++, 1)
+      t.equal(order++, 1)
       t.notOk(req.rawBody)
       const change = new Readable()
       change.receivedEncodedLength = parseInt(req.headers['content-length'], 10)
@@ -199,8 +199,8 @@ t.test('raw body is the last body stream value', t => {
       done(null, change)
     }
   }, (req, reply) => {
-    t.deepEquals(req.body, { hello: 'last world' })
-    t.equals(JSON.stringify(req.body), req.rawBody)
+    t.same(req.body, { hello: 'last world' })
+    t.equal(JSON.stringify(req.body), req.rawBody)
     reply.send(req.rawBody)
   })
 
@@ -211,7 +211,7 @@ t.test('raw body is the last body stream value', t => {
   }, (err, res) => {
     t.error(err)
     t.equal(res.statusCode, 200)
-    t.equals(res.payload, JSON.stringify({ hello: 'another world' }))
+    t.equal(res.payload, JSON.stringify({ hello: 'another world' }))
 
     order = 0 // reset the global order
     app.inject({
@@ -221,7 +221,7 @@ t.test('raw body is the last body stream value', t => {
     }, (err, res) => {
       t.error(err)
       t.equal(res.statusCode, 200)
-      t.equals(res.payload, JSON.stringify({ hello: 'last world' }))
+      t.equal(res.payload, JSON.stringify({ hello: 'last world' }))
     })
   })
 })
@@ -246,7 +246,7 @@ t.test('raw body is the first body stream value', t => {
   app.register(rawBody, { runFirst: true })
 
   app.post('/', (req, reply) => {
-    t.deepEquals(req.body, { HELLO: 'WORLD' })
+    t.same(req.body, { HELLO: 'WORLD' })
     reply.send(req.rawBody)
   })
 
@@ -262,7 +262,7 @@ t.test('raw body is the first body stream value', t => {
       done(null, payload.pipe(transformation))
     }
   }, (req, reply) => {
-    t.deepEquals(req.body, { HELLO: 'WORLD' })
+    t.same(req.body, { HELLO: 'WORLD' })
     reply.send(req.rawBody)
   })
 
@@ -273,7 +273,7 @@ t.test('raw body is the first body stream value', t => {
   }, (err, res) => {
     t.error(err)
     t.equal(res.statusCode, 200)
-    t.equals(res.payload, JSON.stringify(payload))
+    t.equal(res.payload, JSON.stringify(payload))
 
     app.inject({
       method: 'POST',
@@ -282,7 +282,7 @@ t.test('raw body is the first body stream value', t => {
     }, (err, res) => {
       t.error(err)
       t.equal(res.statusCode, 200)
-      t.equals(res.payload, JSON.stringify(payload))
+      t.equal(res.payload, JSON.stringify(payload))
     })
   })
 })
@@ -305,8 +305,8 @@ t.test('raw body route array', t => {
       done(null, change)
     }]
   }, (req, reply) => {
-    t.deepEquals(req.body, { hello: 'last world' })
-    t.equals(JSON.stringify(req.body), req.rawBody)
+    t.same(req.body, { hello: 'last world' })
+    t.equal(JSON.stringify(req.body), req.rawBody)
     reply.send(req.rawBody)
   })
 
@@ -317,7 +317,7 @@ t.test('raw body route array', t => {
   }, (err, res) => {
     t.error(err)
     t.equal(res.statusCode, 200)
-    t.equals(res.payload, JSON.stringify({ hello: 'last world' }))
+    t.equal(res.payload, JSON.stringify({ hello: 'last world' }))
   })
 })
 
@@ -341,8 +341,8 @@ t.test('preparsing run first', t => {
       done(null, payload.pipe(transformation))
     }]
   }, (req, reply) => {
-    t.deepEquals(req.body, { HELLO: 'WORLD' })
-    t.equals(req.rawBody, JSON.stringify(payload))
+    t.same(req.body, { HELLO: 'WORLD' })
+    t.equal(req.rawBody, JSON.stringify(payload))
     reply.send(req.rawBody)
   })
 
@@ -353,7 +353,7 @@ t.test('preparsing run first', t => {
   }, (err, res) => {
     t.error(err)
     t.equal(res.statusCode, 200)
-    t.equals(res.payload, JSON.stringify(payload))
+    t.equal(res.payload, JSON.stringify(payload))
   })
 })
 
@@ -366,7 +366,7 @@ t.test('raw body change default name', t => {
   app.register(rawBody, { field: 'rawRawRaw', encoding: false })
 
   app.post('/', (req, reply) => {
-    t.deepEquals(req.body, { hello: 'world' })
+    t.same(req.body, { hello: 'world' })
     t.type(req.rawRawRaw, Buffer)
     reply.send(req.rawRawRaw)
   })
@@ -378,7 +378,7 @@ t.test('raw body change default name', t => {
   }, (err, res) => {
     t.error(err)
     t.equal(res.statusCode, 200)
-    t.equals(res.payload, JSON.stringify(payload))
+    t.equal(res.payload, JSON.stringify(payload))
   })
 })
 
@@ -391,7 +391,7 @@ t.test('raw body buffer', t => {
   app.register(rawBody, { encoding: false })
 
   app.post('/', (req, reply) => {
-    t.deepEquals(req.body, { hello: 'world' })
+    t.same(req.body, { hello: 'world' })
     t.type(req.rawBody, Buffer)
     reply.send(req.rawBody)
   })
@@ -403,7 +403,7 @@ t.test('raw body buffer', t => {
   }, (err, res) => {
     t.error(err)
     t.equal(res.statusCode, 200)
-    t.equals(res.payload, JSON.stringify(payload))
+    t.equal(res.payload, JSON.stringify(payload))
   })
 })
 
