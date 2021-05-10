@@ -183,7 +183,7 @@ t.test('raw body is the last body stream value', t => {
   app.register(rawBody)
 
   app.post('/', (req, reply) => {
-    t.sames(req.body, { hello: 'another world' })
+    t.same(req.body, { hello: 'another world' })
     t.equal(JSON.stringify(req.body), req.rawBody)
     reply.send(req.rawBody)
   })
@@ -199,7 +199,7 @@ t.test('raw body is the last body stream value', t => {
       done(null, change)
     }
   }, (req, reply) => {
-    t.sames(req.body, { hello: 'last world' })
+    t.same(req.body, { hello: 'last world' })
     t.equal(JSON.stringify(req.body), req.rawBody)
     reply.send(req.rawBody)
   })
@@ -246,7 +246,7 @@ t.test('raw body is the first body stream value', t => {
   app.register(rawBody, { runFirst: true })
 
   app.post('/', (req, reply) => {
-    t.sames(req.body, { HELLO: 'WORLD' })
+    t.same(req.body, { HELLO: 'WORLD' })
     reply.send(req.rawBody)
   })
 
@@ -262,7 +262,7 @@ t.test('raw body is the first body stream value', t => {
       done(null, payload.pipe(transformation))
     }
   }, (req, reply) => {
-    t.sames(req.body, { HELLO: 'WORLD' })
+    t.same(req.body, { HELLO: 'WORLD' })
     reply.send(req.rawBody)
   })
 
@@ -305,7 +305,7 @@ t.test('raw body route array', t => {
       done(null, change)
     }]
   }, (req, reply) => {
-    t.sames(req.body, { hello: 'last world' })
+    t.same(req.body, { hello: 'last world' })
     t.equal(JSON.stringify(req.body), req.rawBody)
     reply.send(req.rawBody)
   })
@@ -341,7 +341,7 @@ t.test('preparsing run first', t => {
       done(null, payload.pipe(transformation))
     }]
   }, (req, reply) => {
-    t.sames(req.body, { HELLO: 'WORLD' })
+    t.same(req.body, { HELLO: 'WORLD' })
     t.equal(req.rawBody, JSON.stringify(payload))
     reply.send(req.rawBody)
   })
@@ -366,7 +366,7 @@ t.test('raw body change default name', t => {
   app.register(rawBody, { field: 'rawRawRaw', encoding: false })
 
   app.post('/', (req, reply) => {
-    t.sames(req.body, { hello: 'world' })
+    t.same(req.body, { hello: 'world' })
     t.type(req.rawRawRaw, Buffer)
     reply.send(req.rawRawRaw)
   })
@@ -391,7 +391,7 @@ t.test('raw body buffer', t => {
   app.register(rawBody, { encoding: false })
 
   app.post('/', (req, reply) => {
-    t.sames(req.body, { hello: 'world' })
+    t.same(req.body, { hello: 'world' })
     t.type(req.rawBody, Buffer)
     reply.send(req.rawBody)
   })
