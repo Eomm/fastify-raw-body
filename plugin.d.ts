@@ -11,6 +11,7 @@ export interface RawBodyPluginOptions {
   global?: boolean
   encoding?: string | null | false
   runFirst?: boolean
+  routes?: string[]
 }
 
 declare const fastifyRawBody: FastifyPluginCallback<RawBodyPluginOptions>
