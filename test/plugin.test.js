@@ -470,3 +470,65 @@ t.test('bad json body', t => {
     t.equal(res.statusCode, 400)
   })
 })
+
+t.test('defined routes', (t) => {
+  t.plan(12)
+  const app = Fastify()
+  const payload = { hello: 'world' }
+  const shouldBe = JSON.stringify(payload)
+  app.register(rawBody, { routes: ['/test', '/webhook/123'], global: false })
+
+  app.post('/test', (req, reply) => {
+    t.ok(req.rawBody)
+    reply.send(req.rawBody)
+  })
+
+  app.post('/webhook/123', (req, reply) => {
+    t.ok(req.rawBody)
+    reply.send(req.rawBody)
+  })
+
+  app.post('/notmapped', (req, reply) => {
+    t.notOk(req.rawBody)
+    reply.send(`raw=${req.rawBody}`)
+  })
+
+  app.inject(
+    {
+      method: 'POST',
+      url: '/test',
+      payload
+    },
+    (err, res) => {
+      t.error(err)
+      t.equal(res.statusCode, 200)
+      t.equal(res.payload, shouldBe)
+    }
+  )
+
+  app.inject(
+    {
+      method: 'POST',
+      url: '/webhook/123',
+      payload
+    },
+    (err, res) => {
+      t.error(err)
+      t.equal(res.statusCode, 200)
+      t.equal(res.payload, shouldBe)
+    }
+  )
+
+  app.inject(
+    {
+      method: 'POST',
+      url: '/notmapped',
+      payload
+    },
+    (err, res) => {
+      t.error(err)
+      t.equal(res.statusCode, 200)
+      t.equal(res.payload, 'raw=undefined')
+    }
+  )
+})
