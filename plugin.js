@@ -12,11 +12,12 @@ function rawBody (fastify, opts, next) {
     return
   }
 
-  const { field, encoding, global, runFirst } = Object.assign({
+  const { field, encoding, global, runFirst, routes } = Object.assign({
     field: 'rawBody',
     encoding: 'utf8',
     global: true,
-    runFirst: false
+    runFirst: false,
+    routes: []
   }, opts)
 
   if (encoding === false) {
@@ -28,7 +29,11 @@ function rawBody (fastify, opts, next) {
   fastify.addHook('onRoute', (routeOptions) => {
     const wantSkip = routeOptions.method === 'GET' || (routeOptions.config && routeOptions.config.rawBody === false)
 
-    if ((global && !wantSkip) || (routeOptions.config && routeOptions.config.rawBody === true)) {
+    if (
+      (global && !wantSkip && !routes.length) ||
+      (routeOptions.config && routeOptions.config.rawBody === true) ||
+      routes.includes(routeOptions.path)
+    ) {
       if (!routeOptions.preParsing) {
         routeOptions.preParsing = [preparsingRawBody]
       } else if (Array.isArray(routeOptions.preParsing)) {
