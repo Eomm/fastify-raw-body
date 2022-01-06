@@ -3,8 +3,6 @@ name: ci
 on:
   push:
   pull_request:
-  schedule:
-    - cron: "1 0 * * 0"
 
 env:
   CI: true
@@ -15,20 +13,21 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [10.x, 12.x, 14.x]
+        node-version: [10, 12, 14, 16]
         os: [ubuntu-latest, windows-latest]
 
     steps:
       - uses: actions/checkout@v2
 
       - name: Use Node.js
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node-version }}
 
       - name: Install
         run: |
           npm install --ignore-scripts
+
       - name: Run tests
         run: |
           npm test
