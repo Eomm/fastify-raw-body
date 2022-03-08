@@ -24,7 +24,7 @@ npm i fastify-raw-body@2.0.0
 ## Usage
 
 This plugin will add the `request.rawBody`.  
-It will get the data using the [`preParsing`](https://github.com/fastify/fastify/blob/master/docs/Hooks.md#preparsing) hook.
+It will get the data using the [`preParsing`](https://www.fastify.io/docs/latest/Reference/Hooks/#preparsing) hook.
 
 ```js
 const Fastify = require('fastify')
