@@ -1,7 +1,8 @@
 # fastify-raw-body
 
-![ci](https://github.com/Eomm/fastify-raw-body/workflows/ci/badge.svg)
-[![js-standard-style](https://img.shields.io/badge/code%20style-standard-brightgreen.svg?style=flat)](http://standardjs.com/)
+[![Build Status](https://github.com/Eomm/fastify-raw-body/workflows/ci/badge.svg)](https://github.com/Eomm/fastify-raw-body/actions)
+[![npm](https://img.shields.io/npm/v/fastify-raw-body)](https://www.npmjs.com/package/fastify-raw-body)
+[![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
 
 Adds the raw body to the Fastify request object.
 
@@ -13,13 +14,13 @@ Adds the raw body to the Fastify request object.
 npm i fastify-raw-body
 ```
 
-### Fastify v2
+### Compatibility
 
-The version `2.x` of this module support Fastify v2 and Node.js>=6
+| Plugin version | Fastify version |
+| ------------- |:---------------:|
+| `^2.0.0` | `^2.0.0` |
+| `^3.0.0` | `^3.0.0` |
 
-```
-npm i fastify-raw-body@2.0.0
-```
 
 ## Usage
 
@@ -65,4 +66,4 @@ If you haven't customized this component, it will be secure as the original one 
 
 ## License
 
-Licensed under [MIT](./LICENSE).
+Copyright [Manuel Spigolon](https://github.com/Eomm), Licensed under [MIT](./LICENSE).
