@@ -1,0 +1,33 @@
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      semver:
+        description: 'The semver to use'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+  pull_request:
+    types: [closed]
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - uses: nearform/optic-release-automation-action@v2
+        with:
+          github-token: ${{ secrets.github_token }}
+          npm-token: ${{ secrets.NPM_TOKEN }}
+          optic-token: ${{ secrets.OPTIC_TOKEN }}
+          semver: ${{ github.event.inputs.semver }}
+          sync-semver-tags: 'true'
