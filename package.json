@@ -7,7 +7,7 @@
   "scripts": {
     "lint": "standard",
     "lint:fix": "standard --fix",
-    "test": "tap test/**.test.js && tsd"
+    "test": "tap test/**.test.* && tsd"
   },
   "repository": {
     "type": "git",
@@ -29,16 +29,16 @@
   },
   "homepage": "https://github.com/Eomm/fastify-raw-body#readme",
   "devDependencies": {
-    "@types/node": "^14.14.17",
-    "fastify": "^3.0.0-rc.4",
+    "@types/node": "^17.0.36",
+    "fastify": "^4.0.0-rc.4",
     "standard": "^17.0.0",
-    "tap": "^15.0.1",
-    "tsd": "^0.14.0"
+    "tap": "^16.2.0",
+    "tsd": "^0.20.0"
   },
   "dependencies": {
-    "fastify-plugin": "^2.0.0",
-    "raw-body": "^2.4.1",
-    "secure-json-parse": "^2.1.0"
+    "fastify-plugin": "^3.0.1",
+    "raw-body": "^2.5.1",
+    "secure-json-parse": "^2.4.0"
   },
   "tsd": {
     "directory": "test/types"

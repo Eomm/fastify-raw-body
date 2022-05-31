@@ -8,8 +8,6 @@ Adds the raw body to the Fastify request object.
 
 ## Install
 
-### Fastify v3
-
 ```
 npm i fastify-raw-body
 ```
@@ -20,6 +18,7 @@ npm i fastify-raw-body
 | ------------- |:---------------:|
 | `^2.0.0` | `^2.0.0` |
 | `^3.0.0` | `^3.0.0` |
+| `^4.0.0` | `^4.0.0` |
 
 
 ## Usage
@@ -28,10 +27,10 @@ This plugin will add the `request.rawBody`.
 It will get the data using the [`preParsing`](https://www.fastify.io/docs/latest/Reference/Hooks/#preparsing) hook.
 
 ```js
-const Fastify = require('fastify')
-const app = Fastify()
+import Fastify from 'fastify'
 
-app.register(require('fastify-raw-body'), {
+const app = Fastify()
+await app.register(import('fastify-raw-body'), {
   field: 'rawBody', // change the default request.rawBody property name
   global: false, // add the rawBody to every request. **Default true**
   encoding: 'utf8', // set it to false to set rawBody as a Buffer **Default utf8**
@@ -51,10 +50,15 @@ app.post('/', {
 })
 ```
 
-Notice: Setting `global: false` and then the route configuration `{ config: { rawBody: true } }` will
-save memory of your server since the `rawBody` is a copy of the `body` and it will double the memory usage.
+> **Note**  
+> You need to `await` the plugin registration to make sure the plugin is ready to use.
+> All the routes defined **before** the plugin registration will be ignored.
+> This change has been introduced in Fastify v4.
 
-So use it only for the routes that you need to.
+> **Warning**  
+> Setting `global: false` and then the route configuration `{ config: { rawBody: true } }` will
+> save memory of your server since the `rawBody` is a copy of the `body` and it will double the memory usage.  
+> So use it only for the routes that you need to.
 
 ### Raw body as Buffer
 
