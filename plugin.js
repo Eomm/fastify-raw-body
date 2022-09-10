@@ -84,15 +84,15 @@ function rawBody (fastify, opts, next) {
     }
 
     try {
-      var json = secureJson.parse(body.toString('utf8'), {
+      const json = secureJson.parse(body.toString('utf8'), {
         protoAction: fastify.initialConfig.onProtoPoisoning,
         constructorAction: fastify.initialConfig.onConstructorPoisoning
       })
+      done(null, json)
     } catch (err) {
       err.statusCode = 400
       return done(err)
     }
-    done(null, json)
   }
 }
 
