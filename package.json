@@ -1,6 +1,6 @@
 {
   "name": "fastify-raw-body",
-  "version": "4.0.0",
+  "version": "4.1.0",
   "description": "Request raw body",
   "main": "plugin.js",
   "types": "plugin.d.ts",
