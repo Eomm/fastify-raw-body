@@ -56,16 +56,22 @@ function rawBody (fastify, opts, next) {
   next()
 
   function preparsingRawBody (request, reply, payload, done) {
+    const applyLimit = request.context._parserOptions.limit ?? fastify.initialConfig.bodyLimit
+
     getRawBody(runFirst ? request.raw : payload, {
       length: null, // avoid content lenght check: fastify will do it
-      limit: fastify.initialConfig.bodyLimit, // limit to avoid memory leak or DoS
+      limit: applyLimit, // limit to avoid memory leak or DoS
       encoding
     }, function (err, string) {
       if (err) {
         /**
          * the error is managed by fastify server
          * so the request object will not have any
-         * `body` parsed
+         * `body` parsed.
+         *
+         * The preparsingRawBody decorates the request
+         * meanwhile the `payload` is processed by
+         * the fastify server.
          */
         return
       }

@@ -415,6 +415,12 @@ t.test('body limit', async t => {
     payload
   })
   t.equal(res.statusCode, 413)
+  t.same(res.json(), {
+    statusCode: 413,
+    code: 'FST_ERR_CTP_BODY_TOO_LARGE',
+    error: 'Payload Too Large',
+    message: 'Request body is too large'
+  })
 })
 
 t.test('empty body', async t => {
