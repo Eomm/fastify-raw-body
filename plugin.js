@@ -56,7 +56,7 @@ function rawBody (fastify, opts, next) {
   next()
 
   function preparsingRawBody (request, reply, payload, done) {
-    const applyLimit = request.routeConfig.bodyLimit ?? fastify.initialConfig.bodyLimit
+    const applyLimit = request.routeOptions.bodyLimit ?? fastify.initialConfig.bodyLimit
 
     getRawBody(runFirst ? request.raw : payload, {
       length: null, // avoid content lenght check: fastify will do it
