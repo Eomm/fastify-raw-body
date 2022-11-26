@@ -65,6 +65,22 @@ t.test('no register raw body twice', t => {
   })
 })
 
+t.test('wrong fastify version', t => {
+  t.plan(2)
+  const app = Fastify()
+
+  Object.defineProperty(app, 'version', {
+    value: '4.0.0'
+  })
+
+  app.register(rawBody)
+
+  app.ready(err => {
+    t.ok(err)
+    t.match(err.message, /expected '\^4.10.x' fastify version/)
+  })
+})
+
 t.test('register in plugins', t => {
   t.plan(1)
   const app = Fastify()
