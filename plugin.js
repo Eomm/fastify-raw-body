@@ -103,6 +103,6 @@ function rawBody (fastify, opts, next) {
 }
 
 module.exports = fp(rawBody, {
-  fastify: '^4',
+  fastify: '^4.10.x',
   name: 'fastify-raw-body'
 })
