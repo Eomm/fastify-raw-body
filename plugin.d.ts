@@ -6,13 +6,21 @@ declare module 'fastify' {
   }
 }
 
-export interface RawBodyPluginOptions {
-  field?: string
-  global?: boolean
-  encoding?: string | null | false
-  runFirst?: boolean
-  routes?: string[]
+type FastifyRawBody = FastifyPluginCallback<fastifyRawBody.RawBodyPluginOptions> 
+
+declare namespace fastifyRawBody {
+  export interface RawBodyPluginOptions {
+    field?: string
+    global?: boolean
+    encoding?: string | null | false
+    runFirst?: boolean
+    routes?: string[]
+  }
+
+  export const fastifyRawBody: FastifyRawBody;
+  export { fastifyRawBody as default };
 }
 
-declare const fastifyRawBody: FastifyPluginCallback<RawBodyPluginOptions>
-export default fastifyRawBody
+
+declare function fastifyRawBody(...params: Parameters<FastifyRawBody>): ReturnType<FastifyRawBody>
+export = fastifyRawBody
