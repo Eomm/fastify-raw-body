@@ -7,7 +7,8 @@
   "scripts": {
     "lint": "standard",
     "lint:fix": "standard --fix",
-    "test": "tap test/**.test.* && tsd"
+    "test": "tap test/**.test.* && tsd",
+    "test:types": "tsd"
   },
   "repository": {
     "type": "git",
@@ -17,6 +18,8 @@
     "raw-body",
     "body",
     "request",
+    "fastify",
+    "fastify-plugin",
     "fastify-raw-body"
   ],
   "author": "Manuel Spigolon <behemoth89@gmail.com> (https://github.com/Eomm)",

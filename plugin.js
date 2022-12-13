@@ -102,7 +102,11 @@ function rawBody (fastify, opts, next) {
   }
 }
 
-module.exports = fp(rawBody, {
+const plugin = fp(rawBody, {
   fastify: '^4.10.x',
   name: 'fastify-raw-body'
 })
+
+module.exports = plugin
+module.exports.default = plugin
+module.exports.fastifyRawBody = plugin
