@@ -1,3 +1,5 @@
+import { expectType } from 'tsd'
+
 import fastifyFactory from 'fastify'
 import rawBodyPlugin, { RawBodyPluginOptions } from '../../plugin'
 
@@ -15,3 +17,8 @@ fastify.register(rawBodyPlugin, options2)
 fastify.register(rawBodyPlugin, options3)
 fastify.register(rawBodyPlugin, options4)
 fastify.register(rawBodyPlugin, options5)
+
+fastify.get('/', { config: { rawBody: true } }, (request, reply) => {
+  expectType<boolean | undefined>(request.routeConfig.rawBody)
+  return "rawBody enabled"
+})
