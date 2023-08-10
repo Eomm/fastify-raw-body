@@ -77,7 +77,7 @@ t.test('wrong fastify version', t => {
 
   app.ready(err => {
     t.ok(err)
-    t.match(err.message, /expected '\^4.10.x' fastify version/)
+    t.match(err.message, /expected '\^4.19.x' fastify version/)
   })
 })
 
