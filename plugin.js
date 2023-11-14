@@ -21,9 +21,13 @@ function rawBody (fastify, opts, next) {
   }, opts)
 
   if (encoding === false) {
-    fastify.addContentTypeParser('application/json',
-      { parseAs: 'buffer' },
-      almostDefaultJsonParser)
+    fastify.addContentTypeParser([
+      'application/json',
+      'application/activity+json',
+      'application/ld+json'
+    ],
+    { parseAs: 'buffer' },
+    almostDefaultJsonParser)
   }
 
   fastify.addHook('onRoute', (routeOptions) => {
