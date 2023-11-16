@@ -414,6 +414,29 @@ t.test('raw body buffer', async t => {
   t.equal(res.payload, JSON.stringify(payload))
 })
 
+t.test('raw body alternative content-type (application/ld+json)', async t => {
+  const app = Fastify()
+
+  const payload = { hello: 'world' }
+
+  await app.register(rawBody, { encoding: false, jsonContentTypes: ['application/ld+json'] })
+
+  app.post('/', (req, reply) => {
+    t.same(req.body, { hello: 'world' })
+    t.type(req.rawBody, Buffer)
+    reply.send(req.rawBody)
+  })
+
+  const res = await app.inject({
+    method: 'POST',
+    url: '/',
+    headers: { 'content-type': 'application/ld+json' },
+    payload
+  })
+  t.equal(res.statusCode, 200)
+  t.equal(res.payload, JSON.stringify(payload))
+})
+
 t.test('body limit', async t => {
   const app = Fastify({ bodyLimit: 5 })
 

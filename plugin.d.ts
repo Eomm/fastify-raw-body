@@ -19,6 +19,7 @@ declare namespace fastifyRawBody {
     encoding?: string | null | false
     runFirst?: boolean
     routes?: string[]
+    jsonContentTypes?: string[]
   }
 
   export const fastifyRawBody: FastifyRawBody;

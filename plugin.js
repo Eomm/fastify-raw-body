@@ -12,16 +12,17 @@ function rawBody (fastify, opts, next) {
     return
   }
 
-  const { field, encoding, global, runFirst, routes } = Object.assign({
+  const { field, encoding, global, runFirst, routes, jsonContentTypes } = Object.assign({
     field: 'rawBody',
     encoding: 'utf8',
     global: true,
     runFirst: false,
-    routes: []
+    routes: [],
+    jsonContentTypes: ['application/json']
   }, opts)
 
   if (encoding === false) {
-    fastify.addContentTypeParser('application/json',
+    fastify.addContentTypeParser(jsonContentTypes,
       { parseAs: 'buffer' },
       almostDefaultJsonParser)
   }
