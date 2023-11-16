@@ -18,7 +18,7 @@ function rawBody (fastify, opts, next) {
     global: true,
     runFirst: false,
     routes: [],
-    jsonContentTypes: ['application/json'],
+    jsonContentTypes: ['application/json']
   }, opts)
 
   if (encoding === false) {
