@@ -1,4 +1,4 @@
-import * as t from 'tap'
+import t from 'tap'
 import Fastify from 'fastify'
 
 await t.test('register in plugins', async t => {
