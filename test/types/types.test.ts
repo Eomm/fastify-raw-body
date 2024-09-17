@@ -19,6 +19,6 @@ fastify.register(rawBodyPlugin, options4)
 fastify.register(rawBodyPlugin, options5)
 
 fastify.get('/', { config: { rawBody: true } }, (request, reply) => {
-  expectType<any>(request.rawBody)
+  expectType<string | Buffer | undefined>(request.rawBody)
   return "rawBody enabled"
 })
