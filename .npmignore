@@ -108,3 +108,5 @@ package-lock.json
 .github
 .eslintrc
 test/types
+asd*
+.tap

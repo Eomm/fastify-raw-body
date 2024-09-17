@@ -104,7 +104,7 @@ function rawBody (fastify, opts, next) {
 }
 
 const plugin = fp(rawBody, {
-  fastify: '^4.19.x',
+  fastify: '^5.x',
   name: 'fastify-raw-body'
 })
 
