@@ -42,7 +42,7 @@
   "dependencies": {
     "fastify-plugin": "^5.0.0",
     "raw-body": "^3.0.0",
-    "secure-json-parse": "^3.0.1"
+    "secure-json-parse": "^4.0.0"
   },
   "tsd": {
     "directory": "test/types"
