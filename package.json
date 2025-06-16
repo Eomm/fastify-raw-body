@@ -33,7 +33,7 @@
   },
   "homepage": "https://github.com/Eomm/fastify-raw-body#readme",
   "devDependencies": {
-    "@types/node": "^22.0.0",
+    "@types/node": "^24.0.3",
     "fastify": "^5.0.0",
     "standard": "^17.0.0",
     "tap": "^21.0.0",
