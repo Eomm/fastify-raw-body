@@ -1,0 +1,65 @@
+name: Publish Package
+
+on:
+  workflow_dispatch:
+    inputs:
+      semver:
+        description: "Release bump type"
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+permissions:
+  id-token: write # Required for OIDC
+  contents: write # Required to push tags and commits
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      BUMP_TYPE: ${{ github.event.inputs.semver }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: true # explicit: we push the release commit and tag below
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          registry-url: "https://registry.npmjs.org"
+          package-manager-cache: false # never use caching in release builds
+
+      - name: Bump package version
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          NEW_VERSION=$(npm version "$BUMP_TYPE" --no-git-tag-version)
+          git add package.json
+          git commit -m "Bumped v${NEW_VERSION#v}"
+          echo "NEW_VERSION=${NEW_VERSION#v}" >> "$GITHUB_ENV"
+
+      - name: Install dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+
+      - name: Run tests
+        run: npm test
+
+      - name: Publish to npm
+        run: npm publish --provenance --access public
+
+      - name: Push release commit and tag
+        run: |
+          git tag "v$NEW_VERSION"
+          git push origin HEAD
+          git push origin "v$NEW_VERSION"
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v3.0.2
+        with:
+          tag_name: v${{ env.NEW_VERSION }}
+          name: v${{ env.NEW_VERSION }}
+          generate_release_notes: true
