@@ -1,7 +1,6 @@
 'use strict'
 
 const fp = require('fastify-plugin')
-const getRawBody = require('raw-body')
 const secureJson = require('secure-json-parse')
 
 const kRawBodyHook = Symbol('fastify-raw-body:rawBodyHook')
@@ -57,27 +56,26 @@ function rawBody (fastify, opts, next) {
   next()
 
   function preparsingRawBody (request, reply, payload, done) {
-    const applyLimit = request.routeOptions.bodyLimit
+    /**
+     * The raw body is captured by observing the stream, while `payload` is
+     * forwarded untouched so that the fastify server keeps parsing it, enforces
+     * its own body limit (the client-facing 413 stays `FST_ERR_CTP_BODY_TOO_LARGE`)
+     * and any following preParsing hook still receives the same stream.
+     *
+     * `request[field]` is assigned on the `end` event: this listener is
+     * registered before the server's own content-type parser attaches its
+     * listeners, so it runs first and the raw body is always available by the
+     * time the route handler executes.
+     */
+    const source = runFirst ? request.raw : payload
+    const chunks = []
 
-    getRawBody(runFirst ? request.raw : payload, {
-      length: null, // avoid content lenght check: fastify will do it
-      limit: applyLimit, // limit to avoid memory leak or DoS
-      encoding
-    }, function (err, string) {
-      if (err) {
-        /**
-         * the error is managed by fastify server
-         * so the request object will not have any
-         * `body` parsed.
-         *
-         * The preparsingRawBody decorates the request
-         * meanwhile the `payload` is processed by
-         * the fastify server.
-         */
-        return
-      }
-
-      request[field] = string
+    source.on('data', function (chunk) {
+      chunks.push(Buffer.from(chunk))
+    })
+    source.on('end', function () {
+      const raw = Buffer.concat(chunks)
+      request[field] = encoding === false ? raw : raw.toString(encoding)
     })
 
     done(null, payload)
