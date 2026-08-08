@@ -1,6 +1,6 @@
 # fastify-raw-body
 
-[![Build Status](https://github.com/Eomm/fastify-raw-body/workflows/ci/badge.svg)](https://github.com/Eomm/fastify-raw-body/actions)
+[![ci](https://github.com/Eomm/fastify-raw-body/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Eomm/fastify-raw-body/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/fastify-raw-body)](https://www.npmjs.com/package/fastify-raw-body)
 [![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
 
@@ -16,6 +16,7 @@ npm i fastify-raw-body
 
 | Plugin version | Fastify version |
 | ------------- |:---------------:|
+| `^6.0.0` | `^5.0.0` |
 | `^5.0.0` | `^5.0.0` |
 | `^4.2.1` | `^4.19.0` |
 | `^4.0.0` | `^4.0.0` |

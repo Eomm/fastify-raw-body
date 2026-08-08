@@ -51,16 +51,14 @@ jobs:
       - name: Publish to npm
         run: npm publish --provenance --access public
 
-      - name: Push release commit and tag
-        run: |
-          git tag "v$NEW_VERSION"
-          git push origin HEAD
-          git push origin "v$NEW_VERSION"
+      - name: Push release commit
+        run: git push origin HEAD
 
       - name: Create GitHub release
         uses: softprops/action-gh-release@v3.0.2
         with:
           tag_name: v${{ env.NEW_VERSION }}
+          target_commitish: ${{ github.ref_name }}
           name: v${{ env.NEW_VERSION }}
           generate_release_notes: true # "What's Changed" from merged PRs + contributors + Full Changelog link
           make_latest: true
