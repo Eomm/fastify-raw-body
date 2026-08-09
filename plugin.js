@@ -68,15 +68,41 @@ function rawBody (fastify, opts, next) {
      * time the route handler executes.
      */
     const source = runFirst ? request.raw : payload
-    const chunks = []
+    let chunks = []
 
-    source.on('data', function (chunk) {
+    function onData (chunk) {
       chunks.push(Buffer.from(chunk))
-    })
-    source.on('end', function () {
+    }
+
+    function onEnd () {
       const raw = Buffer.concat(chunks)
       request[field] = encoding === false ? raw : raw.toString(encoding)
-    })
+      cleanup()
+    }
+
+    // On a stream error or a client abort the `end` event never fires, so
+    // `request[field]` is intentionally left unset (the error response is
+    // handled by the fastify server). The listener also guarantees the
+    // request stream always has an `error` handler - avoiding an
+    // `uncaughtException` when nothing else consumes it (e.g. `runFirst` with
+    // a following preParsing hook that pipes the stream) - and releases the
+    // buffered chunks.
+    function onErrored () {
+      cleanup()
+    }
+
+    function cleanup () {
+      chunks = []
+      source.removeListener('data', onData)
+      source.removeListener('end', onEnd)
+      source.removeListener('error', onErrored)
+      source.removeListener('close', onErrored)
+    }
+
+    source.on('data', onData)
+    source.on('end', onEnd)
+    source.on('error', onErrored)
+    source.on('close', onErrored)
 
     done(null, payload)
   }
