@@ -55,7 +55,7 @@ jobs:
         run: git push origin HEAD
 
       - name: Create GitHub release
-        uses: softprops/action-gh-release@v3.0.2
+        uses: softprops/action-gh-release@v3.0.3
         with:
           tag_name: v${{ env.NEW_VERSION }}
           target_commitish: ${{ github.ref_name }}
