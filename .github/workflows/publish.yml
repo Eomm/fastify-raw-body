@@ -12,35 +12,44 @@ on:
           - minor
           - major
 
-permissions:
-  id-token: write # Required for OIDC
-  contents: write # Required to push tags and commits
+permissions: {}
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write # required for npm provenance via OIDC
+      contents: write # required to create the release commit and the tag
     env:
-      BUMP_TYPE: ${{ github.event.inputs.semver }}
+      BUMP_TYPE: ${{ inputs.semver }}
     steps:
-      - uses: actions/checkout@v7
+      - name: Validate the semver input
+        run: |
+          case "$BUMP_TYPE" in
+            patch|minor|major) ;;
+            *) echo "::error::Invalid semver input '$BUMP_TYPE': expected patch, minor or major." && exit 1 ;;
+          esac
+
+      - name: Check out repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-          persist-credentials: true # explicit: we push the release commit and tag below
+          persist-credentials: false # the release commit is created through the GitHub API, not git push
 
-      - uses: actions/setup-node@v7
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: "24"
+          check-latest: true
+          node-version: "lts/*"
           registry-url: "https://registry.npmjs.org"
           package-manager-cache: false # never use caching in release builds
 
       - name: Bump package version
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          NEW_VERSION=$(npm version "$BUMP_TYPE" --no-git-tag-version)
-          git add package.json
-          git commit -m "Bumped v${NEW_VERSION#v}"
-          echo "NEW_VERSION=${NEW_VERSION#v}" >> "$GITHUB_ENV"
+          NEW_VERSION=$(npm version "$(printf '%s' "$BUMP_TYPE")" --no-git-tag-version)
+          git add -u # stages package.json and the lockfile, whichever the repo tracks; committed from the index below
+          SAFE_NEW_VERSION=$(printf '%s' "${NEW_VERSION#v}" | tr -d '\r\n')
+          printf 'NEW_VERSION=%s\n' "$SAFE_NEW_VERSION" >> "$GITHUB_ENV"
 
       - name: Install dependencies
         run: npm install --ignore-scripts --no-audit --no-fund
@@ -48,14 +57,37 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Build the release artifacts
+        run: npm run --if-present release:build
+
+      # Commits created through the GitHub API with GITHUB_TOKEN are signed by GitHub,
+      # so the release commit shows as "Verified".
+      - name: Push release commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          additions=$(git diff --cached --name-only | while IFS= read -r f; do
+            jq -n --arg path "$f" --arg contents "$(git show ":$f" | base64 -w0)" '{path: $path, contents: $contents}'
+          done | jq -s .)
+          jq -n \
+            --arg repo "$GITHUB_REPOSITORY" \
+            --arg branch "$GITHUB_REF_NAME" \
+            --arg oid "$(git rev-parse HEAD)" \
+            --arg msg "Bumped v$NEW_VERSION" \
+            --argjson additions "$additions" \
+            '{query: "mutation($input: CreateCommitOnBranchInput!) { createCommitOnBranch(input: $input) { commit { oid url } } }",
+              variables: {input: {
+                branch: {repositoryNameWithOwner: $repo, branchName: $branch},
+                expectedHeadOid: $oid,
+                message: {headline: $msg},
+                fileChanges: {additions: $additions}}}}' \
+          | gh api graphql --input - --jq '.data.createCommitOnBranch.commit | "Created \(.oid) \(.url)"'
+
       - name: Publish to npm
         run: npm publish --provenance --access public
 
-      - name: Push release commit
-        run: git push origin HEAD
-
       - name: Create GitHub release
-        uses: softprops/action-gh-release@v3.0.3
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           tag_name: v${{ env.NEW_VERSION }}
           target_commitish: ${{ github.ref_name }}
