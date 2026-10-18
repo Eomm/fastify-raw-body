@@ -1,7 +1,7 @@
-import t from 'tap'
+import { test } from 'node:test'
 import Fastify from 'fastify'
 
-await t.test('register in plugins', async t => {
+test('register in plugins', async (t) => {
   const app = Fastify()
 
   app.register((i, o, next) => {
@@ -14,4 +14,5 @@ await t.test('register in plugins', async t => {
   })
 
   await app.ready()
+  t.assert.ok(app, 'app is ready')
 })
