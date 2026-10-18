@@ -1,7 +1,7 @@
 import { expectType } from 'tsd'
 
 import fastifyFactory from 'fastify'
-import rawBodyPlugin, { RawBodyPluginOptions } from '../../plugin'
+import rawBodyPlugin, { RawBodyPluginOptions } from '../plugin'
 
 const optionsNone: RawBodyPluginOptions = {}
 const options1: RawBodyPluginOptions = { global: false }

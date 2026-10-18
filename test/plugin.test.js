@@ -1,11 +1,11 @@
 'use strict'
 
-const t = require('tap')
+const { test } = require('node:test')
 const Fastify = require('fastify')
 const { Transform, Readable } = require('stream')
 const rawBody = require('../plugin')
 
-t.test('raw body flow check', async t => {
+test('raw body flow check', async t => {
   const app = Fastify()
 
   const payload = { hello: 'world' }
@@ -13,33 +13,38 @@ t.test('raw body flow check', async t => {
 
   await app.register(rawBody, { global: false })
 
+  // Capture rawBody value at each lifecycle hook instead of asserting inside
+  // the hook (node:test's strict assertions throw, which would surface as
+  // 500 responses and break this test's final assertions).
+  const captured = {}
+
   app.addHook('onRequest', (request, reply, done) => {
-    t.notOk(request.rawBody)
+    captured.onRequest = request.rawBody
     done()
   })
 
   app.addHook('preParsing', (request, reply, payload, done) => {
-    t.notOk(request.rawBody)
+    captured.preParsing = request.rawBody
     done(null, payload)
   })
 
   app.addHook('preValidation', (request, reply, done) => {
-    t.equal(request.rawBody, shouldBe)
+    captured.preValidation = request.rawBody
     done()
   })
 
   app.addHook('preHandler', (request, reply, done) => {
-    t.equal(request.rawBody, shouldBe)
+    captured.preHandler = request.rawBody
     done()
   })
 
   app.addHook('onSend', (request, reply, payload, done) => {
-    t.equal(request.rawBody, shouldBe)
+    captured.onSend = request.rawBody
     done(null, payload)
   })
 
   app.post('/', { config: { rawBody: true } }, (req, reply) => {
-    t.ok(req.rawBody)
+    captured.handler = !!req.rawBody
     reply.send(req.rawBody)
   })
 
@@ -48,25 +53,26 @@ t.test('raw body flow check', async t => {
     url: '/',
     payload
   })
-  t.equal(res.statusCode, 200)
-  t.equal(res.payload, shouldBe)
+  t.assert.strictEqual(captured.onRequest, undefined)
+  t.assert.strictEqual(captured.preParsing, undefined)
+  t.assert.strictEqual(captured.preValidation, shouldBe)
+  t.assert.strictEqual(captured.preHandler, shouldBe)
+  t.assert.strictEqual(captured.onSend, shouldBe)
+  t.assert.ok(captured.handler)
+  t.assert.strictEqual(res.statusCode, 200)
+  t.assert.strictEqual(res.payload, shouldBe)
 })
 
-t.test('no register raw body twice', t => {
-  t.plan(2)
+test('no register raw body twice', async t => {
   const app = Fastify()
 
   app.register(rawBody)
   app.register(rawBody)
 
-  app.ready(err => {
-    t.ok(err)
-    t.match(err.message, /twice/)
-  })
+  await t.assert.rejects(app.ready(), /twice/)
 })
 
-t.test('wrong fastify version', t => {
-  t.plan(2)
+test('wrong fastify version', async t => {
   const app = Fastify()
 
   Object.defineProperty(app, 'version', {
@@ -75,14 +81,13 @@ t.test('wrong fastify version', t => {
 
   app.register(rawBody)
 
-  app.ready(err => {
-    t.ok(err)
-    t.match(err.message, /expected '\^5.x' fastify version/)
-  })
+  await t.assert.rejects(
+    app.ready(),
+    /expected '\^5.x' fastify version/
+  )
 })
 
-t.test('register in plugins', t => {
-  t.plan(1)
+test('register in plugins', async t => {
   const app = Fastify()
 
   app.register((i, o, next) => {
@@ -94,10 +99,10 @@ t.test('register in plugins', t => {
     next()
   })
 
-  app.ready(err => { t.error(err) })
+  await app.ready()
 })
 
-t.test('raw body not in GET', async t => {
+test('raw body not in GET', async t => {
   const app = Fastify()
 
   const payload = { hello: 'world' }
@@ -105,13 +110,16 @@ t.test('raw body not in GET', async t => {
 
   await app.register(rawBody)
 
+  let getRawBody
+  let postRawBody
+
   app.get('/', (req, reply) => {
-    t.notOk(req.rawBody)
+    getRawBody = req.rawBody
     reply.send(`raw=${req.rawBody}`)
   })
 
   app.post('/', (req, reply) => {
-    t.ok(req.rawBody)
+    postRawBody = req.rawBody
     reply.send(req.rawBody)
   })
 
@@ -120,68 +128,63 @@ t.test('raw body not in GET', async t => {
     url: '/',
     payload
   })
-  t.equal(res.statusCode, 200)
-  t.equal(res.payload, 'raw=undefined')
+  t.assert.strictEqual(res.statusCode, 200)
+  t.assert.strictEqual(res.payload, 'raw=undefined')
+  t.assert.strictEqual(getRawBody, undefined)
 
   res = await app.inject({
     method: 'POST',
     url: '/',
     payload
   })
-  t.equal(res.statusCode, 200)
-  t.equal(res.payload, shouldBe)
+  t.assert.strictEqual(res.statusCode, 200)
+  t.assert.strictEqual(res.payload, shouldBe)
+  t.assert.ok(postRawBody)
 })
 
-t.test('global skip', t => {
-  t.plan(8)
+test('global skip', async t => {
   const app = Fastify()
 
   const payload = { hello: 'world' }
   const shouldBe = JSON.stringify(payload)
 
-  app.register(rawBody)
-    .then(() => {
-      app.post('/skip', { config: { rawBody: false } }, (req, reply) => {
-        t.notOk(req.rawBody)
-        reply.send(`raw=${req.rawBody}`)
-      })
+  await app.register(rawBody)
 
-      app.post('/', (req, reply) => {
-        t.ok(req.rawBody)
-        reply.send(req.rawBody)
-      })
+  app.post('/skip', { config: { rawBody: false } }, (req, reply) => {
+    t.assert.strictEqual(req.rawBody, undefined)
+    reply.send(`raw=${req.rawBody}`)
+  })
 
-      app.inject({
-        method: 'POST',
-        url: '/skip',
-        payload
-      }, (err, res) => {
-        t.error(err)
-        t.equal(res.statusCode, 200)
-        t.equal(res.payload, 'raw=undefined')
-      })
+  app.post('/', (req, reply) => {
+    t.assert.ok(req.rawBody)
+    reply.send(req.rawBody)
+  })
 
-      app.inject({
-        method: 'POST',
-        url: '/',
-        payload
-      }, (err, res) => {
-        t.error(err)
-        t.equal(res.statusCode, 200)
-        t.equal(res.payload, shouldBe)
-      })
-    })
+  let res = await app.inject({
+    method: 'POST',
+    url: '/skip',
+    payload
+  })
+  t.assert.strictEqual(res.statusCode, 200)
+  t.assert.strictEqual(res.payload, 'raw=undefined')
+
+  res = await app.inject({
+    method: 'POST',
+    url: '/',
+    payload
+  })
+  t.assert.strictEqual(res.statusCode, 200)
+  t.assert.strictEqual(res.payload, shouldBe)
 })
 
-t.test('raw body is the last body stream value', t => {
-  t.plan(14)
+test('raw body is the last body stream value', async t => {
   const app = Fastify()
 
   const payload = { hello: 'world' }
 
   let order = 0
   app.addHook('preParsing', function (req, reply, payload, done) {
-    t.equal(order++, 0)
+    t.assert.strictEqual(order++, 0)
     const change = new Readable()
     change.receivedEncodedLength = parseInt(req.headers['content-length'], 10)
     change.push('{"hello":"another world"}')
@@ -189,55 +192,49 @@ t.test('raw body is the last body stream value', t => {
     done(null, change)
   })
 
-  app.register(rawBody)
-    .then(() => {
-      app.post('/', (req, reply) => {
-        t.same(req.body, { hello: 'another world' })
-        t.equal(JSON.stringify(req.body), req.rawBody)
-        reply.send(req.rawBody)
-      })
+  await app.register(rawBody)
 
-      app.post('/preparsing', {
-        preParsing: function (req, reply, payload, done) {
-          t.equal(order++, 1)
-          t.notOk(req.rawBody)
-          const change = new Readable()
-          change.receivedEncodedLength = parseInt(req.headers['content-length'], 10)
-          change.push('{"hello":"last world"}')
-          change.push(null)
-          done(null, change)
-        }
-      }, (req, reply) => {
-        t.same(req.body, { hello: 'last world' })
-        t.equal(JSON.stringify(req.body), req.rawBody)
-        reply.send(req.rawBody)
-      })
+  app.post('/', (req, reply) => {
+    t.assert.deepStrictEqual(req.body, { hello: 'another world' })
+    t.assert.strictEqual(JSON.stringify(req.body), req.rawBody)
+    reply.send(req.rawBody)
+  })
 
-      app.inject({
-        method: 'POST',
-        url: '/',
-        payload
-      }, (err, res) => {
-        t.error(err)
-        t.equal(res.statusCode, 200)
-        t.equal(res.payload, JSON.stringify({ hello: 'another world' }))
+  app.post('/preparsing', {
+    preParsing: function (req, reply, payload, done) {
+      t.assert.strictEqual(order++, 1)
+      t.assert.strictEqual(req.rawBody, undefined)
+      const change = new Readable()
+      change.receivedEncodedLength = parseInt(req.headers['content-length'], 10)
+      change.push('{"hello":"last world"}')
+      change.push(null)
+      done(null, change)
+    }
+  }, (req, reply) => {
+    t.assert.deepStrictEqual(req.body, { hello: 'last world' })
+    t.assert.strictEqual(JSON.stringify(req.body), req.rawBody)
+    reply.send(req.rawBody)
+  })
 
-        order = 0 // reset the global order
-        app.inject({
-          method: 'POST',
-          url: '/preparsing',
-          payload
-        }, (err, res) => {
-          t.error(err)
-          t.equal(res.statusCode, 200)
-          t.equal(res.payload, JSON.stringify({ hello: 'last world' }))
-        })
-      })
-    })
+  let res = await app.inject({
+    method: 'POST',
+    url: '/',
+    payload
+  })
+  t.assert.strictEqual(res.statusCode, 200)
+  t.assert.strictEqual(res.payload, JSON.stringify({ hello: 'another world' }))
+
+  order = 0 // reset the global order
+  res = await app.inject({
+    method: 'POST',
+    url: '/preparsing',
+    payload
+  })
+  t.assert.strictEqual(res.statusCode, 200)
+  t.assert.strictEqual(res.payload, JSON.stringify({ hello: 'last world' }))
 })
 
-t.test('raw body is the first body stream value', t => {
-  t.plan(8)
+test('raw body is the first body stream value', async t => {
   const app = Fastify()
 
   const payload = { hello: 'world' }
@@ -245,7 +242,7 @@ t.test('raw body is the first body stream value', t => {
   app.addHook('preParsing', function (req, reply, payload, done) {
     const transformation = new Transform({
       writableObjectMode: true,
-      transform  (chunk, encoding, done) {
+      transform (chunk, encoding, done) {
         this.push(chunk.toString(encoding).toUpperCase())
         done()
       }
@@ -253,124 +250,111 @@ t.test('raw body is the first body stream value', t => {
     done(null, payload.pipe(transformation))
   })
 
-  app.register(rawBody, { runFirst: true })
-    .then(() => {
-      app.post('/', (req, reply) => {
-        t.same(req.body, { HELLO: 'WORLD' })
-        reply.send(req.rawBody)
-      })
+  await app.register(rawBody, { runFirst: true })
 
-      app.post('/preparsing', {
-        preParsing: function (req, reply, payload, done) {
-          const transformation = new Transform({
-            writableObjectMode: true,
-            transform  (chunk, encoding, done) {
-              this.push(chunk.toString(encoding).toUpperCase())
-              done()
-            }
-          })
-          done(null, payload.pipe(transformation))
+  app.post('/', (req, reply) => {
+    t.assert.deepStrictEqual(req.body, { HELLO: 'WORLD' })
+    reply.send(req.rawBody)
+  })
+
+  app.post('/preparsing', {
+    preParsing: function (req, reply, payload, done) {
+      const transformation = new Transform({
+        writableObjectMode: true,
+        transform (chunk, encoding, done) {
+          this.push(chunk.toString(encoding).toUpperCase())
+          done()
         }
-      }, (req, reply) => {
-        t.same(req.body, { HELLO: 'WORLD' })
-        reply.send(req.rawBody)
       })
+      done(null, payload.pipe(transformation))
+    }
+  }, (req, reply) => {
+    t.assert.deepStrictEqual(req.body, { HELLO: 'WORLD' })
+    reply.send(req.rawBody)
+  })
 
-      app.inject({
-        method: 'POST',
-        url: '/',
-        payload
-      }, (err, res) => {
-        t.error(err)
-        t.equal(res.statusCode, 200)
-        t.equal(res.payload, JSON.stringify(payload))
+  let res = await app.inject({
+    method: 'POST',
+    url: '/',
+    payload
+  })
+  t.assert.strictEqual(res.statusCode, 200)
+  t.assert.strictEqual(res.payload, JSON.stringify(payload))
 
-        app.inject({
-          method: 'POST',
-          url: '/preparsing',
-          payload
-        }, (err, res) => {
-          t.error(err)
-          t.equal(res.statusCode, 200)
-          t.equal(res.payload, JSON.stringify(payload))
-        })
-      })
-    })
+  res = await app.inject({
+    method: 'POST',
+    url: '/preparsing',
+    payload
+  })
+  t.assert.strictEqual(res.statusCode, 200)
+  t.assert.strictEqual(res.payload, JSON.stringify(payload))
 })
 
-t.test('raw body route array', t => {
-  t.plan(6)
+test('raw body route array', async t => {
   const app = Fastify()
 
   const payload = { hello: 'world' }
 
-  app.register(rawBody)
-    .then(() => {
-      app.post('/preparsing', {
-        preParsing: [function (req, reply, payload, done) {
-          t.notOk(req.rawBody)
-          const change = new Readable()
-          change.receivedEncodedLength = parseInt(req.headers['content-length'], 10)
-          change.push('{"hello":"last world"}')
-          change.push(null)
-          done(null, change)
-        }]
-      }, (req, reply) => {
-        t.same(req.body, { hello: 'last world' })
-        t.equal(JSON.stringify(req.body), req.rawBody)
-        reply.send(req.rawBody)
-      })
+  await app.register(rawBody)
 
-      app.inject({
-        method: 'POST',
-        url: '/preparsing',
-        payload
-      }, (err, res) => {
-        t.error(err)
-        t.equal(res.statusCode, 200)
-        t.equal(res.payload, JSON.stringify({ hello: 'last world' }))
-      })
-    })
+  app.post('/preparsing', {
+    preParsing: [function (req, reply, payload, done) {
+      t.assert.strictEqual(req.rawBody, undefined)
+      const change = new Readable()
+      change.receivedEncodedLength = parseInt(req.headers['content-length'], 10)
+      change.push('{"hello":"last world"}')
+      change.push(null)
+      done(null, change)
+    }]
+  }, (req, reply) => {
+    t.assert.deepStrictEqual(req.body, { hello: 'last world' })
+    t.assert.strictEqual(JSON.stringify(req.body), req.rawBody)
+    reply.send(req.rawBody)
+  })
+
+  const res = await app.inject({
+    method: 'POST',
+    url: '/preparsing',
+    payload
+  })
+  t.assert.strictEqual(res.statusCode, 200)
+  t.assert.strictEqual(res.payload, JSON.stringify({ hello: 'last world' }))
 })
 
-t.test('preparsing run first', t => {
-  t.plan(5)
+test('preparsing run first', async t => {
   const app = Fastify()
 
   const payload = { hello: 'world' }
 
-  app.register(rawBody, { runFirst: true })
-    .then(() => {
-      app.post('/preparsing', {
-        preParsing: [function (req, reply, payload, done) {
-          const transformation = new Transform({
-            writableObjectMode: true,
-            transform  (chunk, encoding, done) {
-              this.push(chunk.toString(encoding).toUpperCase())
-              done()
-            }
-          })
-          done(null, payload.pipe(transformation))
-        }]
-      }, (req, reply) => {
-        t.same(req.body, { HELLO: 'WORLD' })
-        t.equal(req.rawBody, JSON.stringify(payload))
-        reply.send(req.rawBody)
-      })
+  await app.register(rawBody, { runFirst: true })
 
-      app.inject({
-        method: 'POST',
-        url: '/preparsing',
-        payload
-      }, (err, res) => {
-        t.error(err)
-        t.equal(res.statusCode, 200)
-        t.equal(res.payload, JSON.stringify(payload))
+  app.post('/preparsing', {
+    preParsing: [function (req, reply, payload, done) {
+      const transformation = new Transform({
+        writableObjectMode: true,
+        transform (chunk, encoding, done) {
+          this.push(chunk.toString(encoding).toUpperCase())
+          done()
+        }
       })
-    })
+      done(null, payload.pipe(transformation))
+    }]
+  }, (req, reply) => {
+    t.assert.deepStrictEqual(req.body, { HELLO: 'WORLD' })
+    t.assert.strictEqual(req.rawBody, JSON.stringify(payload))
+    reply.send(req.rawBody)
+  })
+
+  const res = await app.inject({
+    method: 'POST',
+    url: '/preparsing',
+    payload
+  })
+  t.assert.strictEqual(res.statusCode, 200)
+  t.assert.strictEqual(res.payload, JSON.stringify(payload))
 })
 
-t.test('raw body change default name', async t => {
+test('raw body change default name', async t => {
   const app = Fastify()
 
   const payload = { hello: 'world' }
@@ -378,8 +362,8 @@ t.test('raw body change default name', async t => {
   await app.register(rawBody, { field: 'rawRawRaw', encoding: false })
 
   app.post('/', (req, reply) => {
-    t.same(req.body, { hello: 'world' })
-    t.type(req.rawRawRaw, Buffer)
+    t.assert.deepStrictEqual(req.body, { hello: 'world' })
+    t.assert.ok(req.rawRawRaw instanceof Buffer)
     reply.send(req.rawRawRaw)
   })
 
@@ -388,11 +372,11 @@ t.test('raw body change default name', async t => {
     url: '/',
     payload
   })
-  t.equal(res.statusCode, 200)
-  t.equal(res.payload, JSON.stringify(payload))
+  t.assert.strictEqual(res.statusCode, 200)
+  t.assert.strictEqual(res.payload, JSON.stringify(payload))
 })
 
-t.test('raw body buffer', async t => {
+test('raw body buffer', async t => {
   const app = Fastify()
 
   const payload = { hello: 'world' }
@@ -400,8 +384,8 @@ t.test('raw body buffer', async t => {
   await app.register(rawBody, { encoding: false })
 
   app.post('/', (req, reply) => {
-    t.same(req.body, { hello: 'world' })
-    t.type(req.rawBody, Buffer)
+    t.assert.deepStrictEqual(req.body, { hello: 'world' })
+    t.assert.ok(req.rawBody instanceof Buffer)
     reply.send(req.rawBody)
   })
 
@@ -410,11 +394,11 @@ t.test('raw body buffer', async t => {
     url: '/',
     payload
   })
-  t.equal(res.statusCode, 200)
-  t.equal(res.payload, JSON.stringify(payload))
+  t.assert.strictEqual(res.statusCode, 200)
+  t.assert.strictEqual(res.payload, JSON.stringify(payload))
 })
 
-t.test('raw body alternative content-type (application/ld+json)', async t => {
+test('raw body alternative content-type (application/ld+json)', async t => {
   const app = Fastify()
 
   const payload = { hello: 'world' }
@@ -422,8 +406,8 @@ t.test('raw body alternative content-type (application/ld+json)', async t => {
   await app.register(rawBody, { encoding: false, jsonContentTypes: ['application/ld+json'] })
 
   app.post('/', (req, reply) => {
-    t.same(req.body, { hello: 'world' })
-    t.type(req.rawBody, Buffer)
+    t.assert.deepStrictEqual(req.body, { hello: 'world' })
+    t.assert.ok(req.rawBody instanceof Buffer)
     reply.send(req.rawBody)
   })
 
@@ -433,11 +417,11 @@ t.test('raw body alternative content-type (application/ld+json)', async t => {
     headers: { 'content-type': 'application/ld+json' },
     payload
   })
-  t.equal(res.statusCode, 200)
-  t.equal(res.payload, JSON.stringify(payload))
+  t.assert.strictEqual(res.statusCode, 200)
+  t.assert.strictEqual(res.payload, JSON.stringify(payload))
 })
 
-t.test('body limit', async t => {
+test('body limit', async t => {
   const app = Fastify({ bodyLimit: 5 })
 
   const payload = { hello: 'world' }
@@ -445,7 +429,7 @@ t.test('body limit', async t => {
   await app.register(rawBody, { encoding: false })
 
   app.post('/', (req, reply) => {
-    t.fail('body is too large')
+    t.assert.fail('body is too large')
   })
 
   const res = await app.inject({
@@ -453,8 +437,8 @@ t.test('body limit', async t => {
     url: '/',
     payload
   })
-  t.equal(res.statusCode, 413)
-  t.same(res.json(), {
+  t.assert.strictEqual(res.statusCode, 413)
+  t.assert.deepStrictEqual(res.json(), {
     statusCode: 413,
     code: 'FST_ERR_CTP_BODY_TOO_LARGE',
     error: 'Payload Too Large',
@@ -462,13 +446,13 @@ t.test('body limit', async t => {
   })
 })
 
-t.test('empty body', async t => {
+test('empty body', async t => {
   const app = Fastify()
 
   await app.register(rawBody, { encoding: false })
 
   app.post('/', (req, reply) => {
-    t.fail('body is too small')
+    t.assert.fail('body is too small')
   })
 
   const res = await app.inject({
@@ -477,16 +461,16 @@ t.test('empty body', async t => {
     headers: { 'content-type': 'application/json' },
     payload: ''
   })
-  t.equal(res.statusCode, 400)
+  t.assert.strictEqual(res.statusCode, 400)
 })
 
-t.test('bad json body', async t => {
+test('bad json body', async t => {
   const app = Fastify()
 
   await app.register(rawBody, { encoding: false })
 
   app.post('/', (req, reply) => {
-    t.fail('body is not a json')
+    t.assert.fail('body is not a json')
   })
 
   const res = await app.inject({
@@ -495,68 +479,60 @@ t.test('bad json body', async t => {
     headers: { 'content-type': 'application/json' },
     payload: '{"ops":'
   })
-  t.equal(res.statusCode, 400)
+  t.assert.strictEqual(res.statusCode, 400)
 })
 
-t.test('defined routes', t => {
-  t.plan(12)
+test('defined routes', async t => {
   const app = Fastify()
   const payload = { hello: 'world' }
   const shouldBe = JSON.stringify(payload)
-  app.register(rawBody, { routes: ['/test', '/webhook/123'], global: false })
-    .then(() => {
-      app.post('/test', (req, reply) => {
-        t.ok(req.rawBody)
-        reply.send(req.rawBody)
-      })
 
-      app.post('/webhook/123', (req, reply) => {
-        t.ok(req.rawBody)
-        reply.send(req.rawBody)
-      })
+  await app.register(rawBody, { routes: ['/test', '/webhook/123'], global: false })
 
-      app.post('/notmapped', (req, reply) => {
-        t.notOk(req.rawBody)
-        reply.send(`raw=${req.rawBody}`)
-      })
+  let mappedRequests = 0
+  let unmappedRequest = false
 
-      app.inject(
-        {
-          method: 'POST',
-          url: '/test',
-          payload
-        },
-        (err, res) => {
-          t.error(err)
-          t.equal(res.statusCode, 200)
-          t.equal(res.payload, shouldBe)
-        }
-      )
+  app.post('/test', (req, reply) => {
+    mappedRequests++
+    t.assert.ok(req.rawBody)
+    reply.send(req.rawBody)
+  })
 
-      app.inject(
-        {
-          method: 'POST',
-          url: '/webhook/123',
-          payload
-        },
-        (err, res) => {
-          t.error(err)
-          t.equal(res.statusCode, 200)
-          t.equal(res.payload, shouldBe)
-        }
-      )
+  app.post('/webhook/123', (req, reply) => {
+    mappedRequests++
+    t.assert.ok(req.rawBody)
+    reply.send(req.rawBody)
+  })
 
-      app.inject(
-        {
-          method: 'POST',
-          url: '/notmapped',
-          payload
-        },
-        (err, res) => {
-          t.error(err)
-          t.equal(res.statusCode, 200)
-          t.equal(res.payload, 'raw=undefined')
-        }
-      )
-    })
+  app.post('/notmapped', (req, reply) => {
+    unmappedRequest = true
+    t.assert.strictEqual(req.rawBody, undefined)
+    reply.send(`raw=${req.rawBody}`)
+  })
+
+  let res = await app.inject({
+    method: 'POST',
+    url: '/test',
+    payload
+  })
+  t.assert.strictEqual(res.statusCode, 200)
+  t.assert.strictEqual(res.payload, shouldBe)
+
+  res = await app.inject({
+    method: 'POST',
+    url: '/webhook/123',
+    payload
+  })
+  t.assert.strictEqual(res.statusCode, 200)
+  t.assert.strictEqual(res.payload, shouldBe)
+
+  res = await app.inject({
+    method: 'POST',
+    url: '/notmapped',
+    payload
+  })
+  t.assert.strictEqual(res.statusCode, 200)
+  t.assert.strictEqual(res.payload, 'raw=undefined')
+  t.assert.strictEqual(mappedRequests, 2)
+  t.assert.ok(unmappedRequest)
 })

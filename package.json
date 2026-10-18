@@ -7,7 +7,7 @@
   "scripts": {
     "lint": "standard",
     "lint:fix": "standard --fix",
-    "test": "tap --show-full-coverage && tsd",
+    "test": "c8 --100 node --test && tsd",
     "test:types": "tsd"
   },
   "repository": {
@@ -34,9 +34,9 @@
   "homepage": "https://github.com/Eomm/fastify-raw-body#readme",
   "devDependencies": {
     "@types/node": "^26.0.0",
+    "c8": "^10.1.3",
     "fastify": "^5.0.0",
     "standard": "^17.0.0",
-    "tap": "^21.0.0",
     "tsd": "^0.33.0"
   },
   "dependencies": {
@@ -45,6 +45,6 @@
     "secure-json-parse": "^4.0.0"
   },
   "tsd": {
-    "directory": "test/types"
+    "directory": "test-types"
   }
 }

@@ -1,6 +1,6 @@
 'use strict'
 
-const t = require('tap')
+const { test } = require('node:test')
 const Fastify = require('fastify')
 const rawBody = require('../plugin')
 
@@ -41,7 +41,7 @@ async function buildApp ({
   return app
 }
 
-t.test('body limit per route (route-limit > server-limit)', async t => {
+test('body limit per route (route-limit > server-limit)', async t => {
   const app = await buildApp({
     serverLimit: 10,
     routeLimit: 100
@@ -54,8 +54,8 @@ t.test('body limit per route (route-limit > server-limit)', async t => {
       payload: payloadSmall
     })
 
-    t.equal(res.statusCode, 200)
-    t.equal(res.payload, JSON.stringify(payloadSmall))
+    t.assert.strictEqual(res.statusCode, 200)
+    t.assert.strictEqual(res.payload, JSON.stringify(payloadSmall))
   })
 
   await t.test('must reject if body is bigger than route limit', async t => {
@@ -65,8 +65,8 @@ t.test('body limit per route (route-limit > server-limit)', async t => {
       payload: payloadBig
     })
 
-    t.equal(res.statusCode, 413)
-    t.same(res.json(), limitError)
+    t.assert.strictEqual(res.statusCode, 413)
+    t.assert.deepStrictEqual(res.json(), limitError)
   })
 
   await t.test('must succeed if body is smaller then server limit', async t => {
@@ -76,8 +76,8 @@ t.test('body limit per route (route-limit > server-limit)', async t => {
       payload: payloadMini
     })
 
-    t.equal(res.statusCode, 200)
-    t.equal(res.payload, JSON.stringify(payloadMini))
+    t.assert.strictEqual(res.statusCode, 200)
+    t.assert.strictEqual(res.payload, JSON.stringify(payloadMini))
   })
 
   await t.test('must reject if body is bigger then the server limit', async t => {
@@ -87,12 +87,12 @@ t.test('body limit per route (route-limit > server-limit)', async t => {
       payload: payloadSmall
     })
 
-    t.equal(res.statusCode, 413)
-    t.same(res.json(), limitError)
+    t.assert.strictEqual(res.statusCode, 413)
+    t.assert.deepStrictEqual(res.json(), limitError)
   })
 })
 
-t.test('body limit per route (route-limit < server-limit)', async t => {
+test('body limit per route (route-limit < server-limit)', async t => {
   const app = await buildApp({
     serverLimit: 100,
     routeLimit: 10
@@ -105,8 +105,8 @@ t.test('body limit per route (route-limit < server-limit)', async t => {
       payload: payloadMini
     })
 
-    t.equal(res.statusCode, 200)
-    t.equal(res.payload, JSON.stringify(payloadMini))
+    t.assert.strictEqual(res.statusCode, 200)
+    t.assert.strictEqual(res.payload, JSON.stringify(payloadMini))
   })
 
   await t.test('must reject if body is bigger than route limit', async t => {
@@ -116,8 +116,8 @@ t.test('body limit per route (route-limit < server-limit)', async t => {
       payload: payloadSmall
     })
 
-    t.equal(res.statusCode, 413)
-    t.same(res.json(), limitError)
+    t.assert.strictEqual(res.statusCode, 413)
+    t.assert.deepStrictEqual(res.json(), limitError)
   })
 
   await t.test('must succeed if body is smaller then server limit', async t => {
@@ -127,8 +127,8 @@ t.test('body limit per route (route-limit < server-limit)', async t => {
       payload: payloadSmall
     })
 
-    t.equal(res.statusCode, 200)
-    t.equal(res.payload, JSON.stringify(payloadSmall))
+    t.assert.strictEqual(res.statusCode, 200)
+    t.assert.strictEqual(res.payload, JSON.stringify(payloadSmall))
   })
 
   await t.test('must reject if body is bigger then the server limit', async t => {
@@ -138,7 +138,7 @@ t.test('body limit per route (route-limit < server-limit)', async t => {
       payload: payloadBig
     })
 
-    t.equal(res.statusCode, 413)
-    t.same(res.json(), limitError)
+    t.assert.strictEqual(res.statusCode, 413)
+    t.assert.deepStrictEqual(res.json(), limitError)
   })
 })

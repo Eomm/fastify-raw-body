@@ -107,6 +107,6 @@ package-lock.json
 .vscode
 .github
 .eslintrc
-test/types
+test-types
 asd*
 .tap

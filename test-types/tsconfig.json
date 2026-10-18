@@ -6,5 +6,5 @@
     "strict": true,
     "noImplicitAny": true
   },
-  "files": ["./types.test.ts"]
+  "files": ["./index.test-d.ts"]
 }
