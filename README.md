@@ -2,7 +2,7 @@
 
 [![ci](https://github.com/Eomm/fastify-raw-body/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Eomm/fastify-raw-body/actions/workflows/ci.yml)
 [![npm](https://img.shields.io/npm/v/fastify-raw-body)](https://www.npmjs.com/package/fastify-raw-body)
-[![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
+[![neostandard javascript style](https://img.shields.io/badge/code_style-neostandard-brightgreen?style=flat)](https://github.com/neostandard/neostandard)
 
 Adds the raw body to the Fastify request object.
 
